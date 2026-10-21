@@ -285,6 +285,76 @@ textarea {
   flex: 0 0 auto;
 }
 
+.export {
+  position: relative;
+  display: inline-flex;
+}
+
+.export-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.export-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.export-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  min-width: 220px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+}
+
+.export-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 10px;
+  font: inherit;
+  font-size: 13.5px;
+  text-align: left;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.export-menu-item:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.export-menu-item:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.export-menu-count {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  flex: 0 0 auto;
+}
+
+.export-menu-item:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
 .view-toggle-auto {
   border-left: 1px solid var(--border);
   border-radius: 0 6px 6px 0;
@@ -593,6 +663,11 @@ textarea {
 }
 
 .toast-undone {
+  --toast-accent: #1d4ed8;
+  --toast-accent-bg: #eff6ff;
+}
+
+.toast-exported {
   --toast-accent: #1d4ed8;
   --toast-accent-bg: #eff6ff;
 }

@@ -6,6 +6,8 @@ import JobForm from './components/JobForm.vue'
 import JobTable from './components/JobTable.vue'
 import AppToast from './components/AppToast.vue'
 import type { ToastVariant } from './components/AppToast.vue'
+import ExportButton from './components/ExportButton.vue'
+import type { ExportResult } from './utils/exportJobs'
 import { useJobs } from './composables/useJobs'
 import { useViewMode } from './composables/useViewMode'
 import type { ViewPreference } from './composables/useViewMode'
@@ -199,6 +201,15 @@ function confirmDelete() {
   const entry = undoStack.push('delete', removed.job, removed.index)
   showUndoToast('deleted', `已删除「${removed.job.company}」`, '', entry)
 }
+
+/** Export is a non destructive action, so it never enters the undo stack. */
+function handleExportResult(result: ExportResult) {
+  if (result.ok) {
+    showToast('exported', result.message, '文件已在本地生成')
+    return
+  }
+  showToast('error', '导出失败', result.message)
+}
 </script>
 
 <template>
@@ -211,6 +222,11 @@ function confirmDelete() {
           <p class="brand-sub">求职申请追踪</p>
         </div>
       </div>
+      <ExportButton
+        :filtered-jobs="filteredJobs"
+        :all-jobs="jobs"
+        @result="handleExportResult"
+      />
       <button type="button" class="btn btn-primary" @click="openCreate">新增记录</button>
     </header>
 

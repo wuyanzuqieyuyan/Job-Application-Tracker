@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import type { UndoEntry } from '../composables/useUndoStack'
 
 /** Semantic variant of a toast; drives the icon, colour and a11y semantics. */
-export type ToastVariant = 'added' | 'deleted' | 'edited' | 'undone' | 'error'
+export type ToastVariant = 'added' | 'deleted' | 'edited' | 'undone' | 'exported' | 'error'
 
 const props = defineProps<{
   variant: ToastVariant
@@ -113,6 +113,23 @@ const progressWidth = computed(() => {
             stroke-width="1.8"
             stroke-linecap="round"
             stroke-linejoin="round"
+          />
+        </svg>
+        <svg v-else-if="variant === 'exported'" viewBox="0 0 24 24" focusable="false">
+          <path
+            d="M12 4.2v8.6M8.2 9.2L12 13l3.8-3.8"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M4.8 15v2.2a1.6 1.6 0 001.6 1.6h11.2a1.6 1.6 0 001.6-1.6V15"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
           />
         </svg>
         <svg v-else viewBox="0 0 24 24" focusable="false">
