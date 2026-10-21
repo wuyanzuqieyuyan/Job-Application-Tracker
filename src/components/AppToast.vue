@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { UndoEntry } from '../composables/useUndoStack'
+import type { ToastVariant } from '../composables/useToastController'
 import { useI18n } from '../composables/useI18n'
-
-/** Semantic variant of a toast; drives the icon, colour and a11y semantics. */
-export type ToastVariant = 'added' | 'deleted' | 'edited' | 'undone' | 'exported' | 'error'
 
 const props = defineProps<{
   variant: ToastVariant

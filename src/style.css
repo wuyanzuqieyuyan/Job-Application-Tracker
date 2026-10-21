@@ -1,3 +1,6 @@
+﻿/* ============================================================
+   1. 基础变量与重置
+   ============================================================ */
 :root {
   --bg: #f4f6fb;
   --surface: #ffffff;
@@ -36,6 +39,9 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ============================================================
+   2. 页面布局（页头、主体、Dashboard）
+   ============================================================ */
 .app {
   max-width: 1080px;
   margin: 0 auto;
@@ -57,6 +63,18 @@ body {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+/* 中英文按钮宽度保持一致，避免切换语言时页面横向抖动 */
+.btn-lang,
+.btn-export {
+  min-width: 144px;
+  justify-content: center;
+}
+
+.app-actions .btn-primary {
+  min-width: 112px;
+  justify-content: center;
 }
 
 .btn-lang {
@@ -99,6 +117,9 @@ body {
 }
 
 /* 悬浮新增按钮：滚动长列表时随时可用 */
+/* ============================================================
+   3. 悬浮新增按钮
+   ============================================================ */
 .fab-add {
   position: fixed;
   right: 20px;
@@ -181,7 +202,10 @@ body {
 }
 
 /* 2 x 2 KPI tiles fill the left column, so it matches the chart height */
-.dashboard .stats {
+.dashboard /* ============================================================
+   4. 统计卡片与状态分布图
+   ============================================================ */
+.stats {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: stretch;
 }
@@ -199,8 +223,6 @@ body {
   box-shadow: var(--shadow);
   padding: 16px;
   min-width: 0;
-  /* reserve the space so the lazily loaded chart does not shift the layout */
-  min-height: 300px;
 }
 
 .chart-head {
@@ -209,6 +231,8 @@ body {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 6px;
+  /* 标题栏高度固定，展开与收起时不会跳动 */
+  min-height: 24px;
 }
 
 .chart-title {
@@ -255,6 +279,14 @@ body {
   width: 100%;
   height: 240px;
   min-width: 0;
+  overflow: hidden;
+  /* 展开/收起使用高度过渡，避免瞬间跳动 */
+  transition: height 200ms ease, opacity 160ms ease;
+}
+
+.chart-card.is-collapsed .chart-canvas {
+  height: 0;
+  opacity: 0;
 }
 
 .chart-empty {
@@ -305,10 +337,14 @@ body {
   font-size: 13px;
 }
 
+/* ============================================================
+   5. 筛选工具栏
+   ============================================================ */
 .toolbar {
   display: flex;
-  gap: 14px;
   flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px 18px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -360,52 +396,46 @@ textarea {
   resize: vertical;
 }
 
-/* 工具栏：左侧筛选组（内部自然换行）+ 右侧显示方式组 */
-.toolbar {
+/* 工具栏：搜索 / 筛选条件 / 操作三组，组内宽度固定，不随语言变化 */
+.toolbar-group {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 14px;
-}
-
-.toolbar-filters {
-  display: flex;
-  flex-wrap: wrap;
   align-items: flex-end;
   gap: 14px;
-  flex: 1 1 auto;
   min-width: 0;
 }
 
-/* 排序与清除筛选成对出现，不会在换行时被拆散 */
-.filter-pair {
-  display: flex;
-  align-items: flex-end;
-  gap: 14px;
-  flex: 0 0 auto;
+.toolbar-search {
+  flex: 0 0 230px;
 }
 
-.filter-pair .field {
+.toolbar-filters {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+}
+
+.toolbar-actions {
   flex: 0 0 auto;
+  margin-left: auto;
+}
+
+/* 工具栏内的字段使用固定宽度，切换语言时不会重新分配空间 */
+.toolbar .field {
+  flex: 0 0 auto;
+  min-width: 0;
 }
 
 /* 搜索框需要足够宽度，桌面端才能完整显示 placeholder 与输入内容 */
-.field-search {
-  flex: 1 1 240px;
-  min-width: 210px;
-  max-width: 240px;
+.toolbar .field-search {
+  flex: 1 1 auto;
+  width: 100%;
 }
 
-.field-status {
-  flex: 0 1 165px;
-  min-width: 150px;
-  max-width: 165px;
+.toolbar .field-status {
+  flex: 0 0 165px;
 }
 
-.field-range {
-  flex: 0 1 255px;
-  min-width: 230px;
-  max-width: 255px;
+.toolbar .field-range {
+  flex: 0 0 250px;
 }
 
 .field-range-label {
@@ -432,22 +462,22 @@ textarea {
   font-size: 13px;
 }
 
-.field-sort {
-  flex: 0 0 150px;
-  min-width: 140px;
-  max-width: 155px;
+.toolbar .field-sort {
+  /* 需要容纳最长选项文本与原生下拉箭头 */
+  flex: 0 0 190px;
 }
 
-.field-actions {
+.toolbar .field-actions {
   flex: 0 0 auto;
   min-width: 0;
-  /* sit the button on the same baseline as the other filter controls */
   align-self: flex-end;
 }
 
 .field-clear-btn {
   white-space: nowrap;
   height: 43px;
+  /* 中英文文案长度不同，用最小宽度保证按钮宽度稳定 */
+  min-width: 118px;
 }
 
 /* every filter control shares one height, so the row lines up perfectly */
@@ -472,8 +502,11 @@ textarea {
 .field-view {
   flex: 0 0 auto;
   min-width: 0;
-  /* 显示方式控件靠工具栏右侧 */
-  margin-left: auto;
+}
+
+/* 收起后不再撑住 Dashboard 行高，真正把空间还给内容 */
+.dashboard .chart-card.is-collapsed {
+  align-self: start;
 }
 
 .field-view-label {
@@ -490,6 +523,8 @@ textarea {
   background: #eef2f7;
   border: 1px solid var(--border);
   border-radius: 8px;
+  /* 三个分段的中英文宽度不同，固定总宽避免切换语言时抖动 */
+  min-width: 290px;
 }
 
 .view-toggle-btn {
@@ -505,6 +540,7 @@ textarea {
   border-radius: 6px;
   padding: 6px 10px;
   cursor: pointer;
+  white-space: nowrap;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
@@ -616,6 +652,9 @@ textarea {
   flex-wrap: wrap;
 }
 
+/* ============================================================
+   6. 通用控件（按钮、表单、徽标）
+   ============================================================ */
 .btn {
   font: inherit;
   font-weight: 600;
@@ -659,6 +698,9 @@ textarea {
   font-size: 13px;
 }
 
+/* ============================================================
+   7. 记录列表（表格 / 卡片）
+   ============================================================ */
 .table-wrap {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -813,11 +855,6 @@ textarea {
   background: #fecaca;
 }
 
-@media (max-width: 1020px) {
-  .job-table {
-    min-width: 700px;
-  }
-}
 
 .badge {
   display: inline-block;
@@ -1042,12 +1079,9 @@ textarea {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .drawer {
-    animation: none;
-  }
-}
-
+/* ============================================================
+   8. 弹窗与详情抽屉
+   ============================================================ */
 .overlay {
   position: fixed;
   inset: 0;
@@ -1097,6 +1131,9 @@ textarea {
   font-size: 14px;
 }
 
+/* ============================================================
+   9. Toast 操作提示
+   ============================================================ */
 .toast-wrap {
   position: fixed;
   left: 0;
@@ -1311,7 +1348,11 @@ textarea {
   }
 }
 
+/* ============================================================
+   10. 响应式规则与动效降级
+   ============================================================ */
 @media (prefers-reduced-motion: reduce) {
+  .drawer,
   .toast,
   .toast.is-leaving {
     animation: none;
@@ -1447,8 +1488,12 @@ textarea {
   .dashboard .stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
 
+  /* 窄屏表格在容器内横向滚动 */
+  .job-table {
+    min-width: 700px;
+  }
+}
 @media (max-width: 640px) {
   .app {
     padding: 16px 14px 96px;
@@ -1534,24 +1579,31 @@ textarea {
     gap: 10px;
   }
 
-  .toolbar-filters {
+  .toolbar-group {
     flex-direction: column;
     align-items: stretch;
     width: 100%;
     gap: 10px;
   }
 
-  .filter-pair {
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-    gap: 10px;
+  .toolbar-search,
+  .toolbar-filters,
+  .toolbar-actions {
+    flex: 0 0 auto;
+    margin-left: 0;
   }
 
-  /* 窄屏收紧标签与控件之间的距离 */
-  .toolbar-filters .field,
-  .filter-pair .field {
+  /* 纵向排列时 flex-basis 会变成高度，这里统一改为内容高度 */
+  .toolbar .field {
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
     gap: 4px;
+  }
+
+  .field-clear-btn {
+    width: 100%;
+    min-width: 0;
   }
 
   /* 纵向排列时 flex-basis 会变成高度，这里统一改为内容高度 */

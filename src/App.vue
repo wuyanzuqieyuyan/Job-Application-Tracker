@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, ref, watchEffect } from 'vue'
+import { computed, defineAsyncComponent, ref, watchEffect } from 'vue'
 import StatsBar from './components/StatsBar.vue'
 import SearchFilter from './components/SearchFilter.vue'
 import JobForm from './components/JobForm.vue'
 import JobTable from './components/JobTable.vue'
 import AppToast from './components/AppToast.vue'
-import type { ToastVariant } from './components/AppToast.vue'
 import ExportButton from './components/ExportButton.vue'
-import type { ExportResult } from './utils/exportJobs'
-import type { StatusSlice } from './components/StatusChart.vue'
 import JobDetailDrawer from './components/JobDetailDrawer.vue'
+import type { StatusSlice } from './components/StatusChart.vue'
 import { STATUS_COLORS, STATUS_ORDER } from './types'
-
-// the chart library is only fetched when the dashboard is rendered
-const StatusChart = defineAsyncComponent(() => import('./components/StatusChart.vue'))
 import { useJobs } from './composables/useJobs'
 import { useViewMode } from './composables/useViewMode'
 import type { ViewPreference } from './composables/useViewMode'
-import { useUndoStack, UNDO_WINDOW_MS } from './composables/useUndoStack'
-import type { UndoEntry } from './composables/useUndoStack'
+import { useUndoStack } from './composables/useUndoStack'
 import { useI18n } from './composables/useI18n'
+import { useAppDialogs } from './composables/useAppDialogs'
+import { useToastController } from './composables/useToastController'
+import type { ExportResult } from './utils/exportJobs'
 import type { Job } from './types'
+
+// 图表库只在 Dashboard 渲染时才加载
+const StatusChart = defineAsyncComponent(() => import('./components/StatusChart.vue'))
 
 const {
   jobs,
@@ -44,7 +44,7 @@ const { t, statusLabel, locale, toggleLocale } = useI18n()
 
 // 同步文档语言，屏幕阅读器与原生日期控件会跟随界面语言
 watchEffect(() => {
-  document.documentElement.lang = locale.value === 'zh-CN' ? 'zh-CN' : 'en'
+  document.documentElement.lang = locale.value
 })
 
 function handleViewPreference(value: ViewPreference) {
@@ -56,50 +56,33 @@ function handleViewPreference(value: ViewPreference) {
 }
 
 const undoStack = useUndoStack()
+const toastController = useToastController(undoStack)
+const { toast, toastLeaving, toastUndoEntry, undoRemainingMs, undoProgress, showToast, hideToast } =
+  toastController
 
-const formOpen = ref(false)
-const editingJob = ref<Job | null>(null)
-const pendingDelete = ref<Job | null>(null)
+const fabRef = ref<HTMLElement | null>(null)
 
-/** Detail drawer selection, identified by the stable record id. */
-const detailJobId = ref<string | null>(null)
-const detailJob = computed(() => jobs.value.find((job) => job.id === detailJobId.value) ?? null)
-const detailOpen = computed(() => detailJobId.value !== null)
-
-function openDetail(job: Job) {
-  detailJobId.value = job.id
-}
-
-function closeDetail() {
-  detailJobId.value = null
-}
-
-/** Editing from the drawer reuses the existing edit flow. */
-function handleDetailEdit(job: Job) {
-  closeDetail()
-  openEdit(job)
-}
-
-/** Deleting from the drawer reuses the existing confirmation + undo flow. */
-function handleDetailRemove(job: Job) {
-  closeDetail()
-  pendingDelete.value = job
-}
-
-const toast = ref<{
-  variant: ToastVariant
-  title: string
-  description: string
-  undoId: string | null
-} | null>(null)
-const toastLeaving = ref(false)
-let toastTimer: ReturnType<typeof setTimeout> | undefined
-
-const TOAST_EXIT_MS = 180
+const dialogs = useAppDialogs({ fallbackFocus: () => fabRef.value, jobs })
+const {
+  formOpen,
+  editingJob,
+  pendingDelete,
+  detailJob,
+  detailOpen,
+  openCreate,
+  openEdit,
+  closeForm,
+  requestDelete,
+  cancelDelete,
+  openDetail,
+  closeDetail,
+  editFromDetail,
+  removeFromDetail,
+} = dialogs
 
 const isFiltering = computed(() => hasActiveFilters.value)
 
-/** Chart slices are derived from the same record counts as the stat cards. */
+/** 图表切片与统计卡片同源，均来自 useJobs 的记录计数。 */
 const statusSlices = computed<StatusSlice[]>(() =>
   STATUS_ORDER.map((status) => ({
     status,
@@ -109,69 +92,29 @@ const statusSlices = computed<StatusSlice[]>(() =>
   })),
 )
 
-const undoRemainingMs = computed(() => undoStack.remainingMs.value)
-/** Share of the undo window left, derived from the undo stack's own clock. */
-const undoProgress = computed(() => {
-  if (!undoStack.topEntry.value) return 0
-  const ratio = undoStack.remainingMs.value / UNDO_WINDOW_MS
-  return Math.max(0, Math.min(1, ratio))
-})
-/**
- * The undo entry this toast may offer to undo. A plain success toast never
- * shows an undo button, even when an earlier operation is still pending.
- */
-const toastUndoEntry = computed(() => {
-  const id = toast.value?.undoId
-  if (!id) return null
-  const top = undoStack.topEntry.value
-  return top && top.id === id ? top : null
-})
-
-function clearToastTimer() {
-  if (toastTimer !== undefined) {
-    clearTimeout(toastTimer)
-    toastTimer = undefined
+function handleSave(payload: Parameters<typeof addJob>[0]) {
+  if (editingJob.value) {
+    updateJob(editingJob.value.id, payload)
+    showToast('edited', t('toastUpdated'), t('toastSaved'))
+  } else {
+    const job = addJob(payload)
+    const entry = undoStack.push('add', job, jobs.value.length - 1)
+    showToast('added', t('toastAdded', { company: job.company }), '', undefined, entry)
   }
+  closeForm()
 }
 
-/** Dismisses the toast with a short exit transition. */
-function hideToast() {
-  if (!toast.value || toastLeaving.value) return
-  clearToastTimer()
-  toastLeaving.value = true
-  toastTimer = setTimeout(() => {
-    toast.value = null
-    toastLeaving.value = false
-  }, TOAST_EXIT_MS)
-}
-
-/**
- * Shows a toast. Success messages fade out on their own; error messages
- * stay until the user closes them so they can be read.
- */
-function showToast(
-  variant: ToastVariant,
-  title: string,
-  description = '',
-  durationMs?: number,
-  undoId: string | null = null,
-) {
-  toast.value = { variant, title, description, undoId }
-  toastLeaving.value = false
-  clearToastTimer()
-  if (variant === 'error') return
-  toastTimer = setTimeout(hideToast, durationMs ?? 3000)
-}
-
-/** Toast for a reversible operation: stays alive while the entry is valid. */
-function showUndoToast(
-  variant: ToastVariant,
-  title: string,
-  description: string,
-  entry: UndoEntry,
-) {
-  const remaining = Math.max(0, entry.expiresAt - Date.now())
-  showToast(variant, title, description, remaining, entry.id)
+function confirmDelete() {
+  if (!pendingDelete.value) return
+  const target = pendingDelete.value
+  const removed = deleteJob(target.id)
+  cancelDelete()
+  if (!removed) {
+    showToast('error', t('toastDeleteFailed'), t('toastDeleteFailedDesc'))
+    return
+  }
+  const entry = undoStack.push('delete', removed.job, removed.index)
+  showToast('deleted', t('toastDeleted', { company: removed.job.company }), '', undefined, entry)
 }
 
 function handleUndo() {
@@ -200,82 +143,20 @@ function handleUndo() {
   if (!ok) {
     showToast('error', title, description)
   } else if (next) {
-    // another undoable operation is still pending: keep the toast and let it
-    // offer the next one with its own remaining time
-    showUndoToast('undone', title, description, next)
+    // 还有待撤销的操作：保留提示并指向下一条
+    showToast('undone', title, description, undefined, next)
   } else {
-    showToast('undone', title, description, 3000)
+    showToast('undone', title, description)
   }
 }
 
-onBeforeUnmount(() => {
-  clearToastTimer()
-})
-
-/** 打开表单时记录触发元素，关闭后恢复焦点 */
-let formTrigger: HTMLElement | null = null
-const fabRef = ref<HTMLElement | null>(null)
-
-function openCreate() {
-  formTrigger = document.activeElement as HTMLElement | null
-  editingJob.value = null
-  formOpen.value = true
-}
-
-function openEdit(job: Job) {
-  formTrigger = document.activeElement as HTMLElement | null
-  editingJob.value = job
-  formOpen.value = true
-}
-
-function closeForm() {
-  formOpen.value = false
-  editingJob.value = null
-  const trigger = formTrigger
-  formTrigger = null
-  nextTick(() => {
-    // 触发按钮可能已被重新创建（悬浮按钮在表单打开时移除），此时回退到悬浮按钮
-    if (trigger && document.contains(trigger)) {
-      trigger.focus()
-    } else if (fabRef.value) {
-      fabRef.value.focus()
-    }
-  })
-}
-
-function handleSave(payload: Parameters<typeof addJob>[0]) {
-  if (editingJob.value) {
-    updateJob(editingJob.value.id, payload)
-    showToast('edited', t('toastUpdated'), t('toastSaved'))
-  } else {
-    const job = addJob(payload)
-    const entry = undoStack.push('add', job, jobs.value.length - 1)
-    showUndoToast('added', t('toastAdded', { company: job.company }), '', entry)
-  }
-  closeForm()
-}
-
-function confirmDelete() {
-  if (!pendingDelete.value) return
-  const target = pendingDelete.value
-  const removed = deleteJob(target.id)
-  pendingDelete.value = null
-  if (!removed) {
-    showToast('error', t('toastDeleteFailed'), t('toastDeleteFailedDesc'))
-    return
-  }
-  const entry = undoStack.push('delete', removed.job, removed.index)
-  showUndoToast('deleted', t('toastDeleted', { company: removed.job.company }), '', entry)
-}
-
-/** Export is a non destructive action, so it never enters the undo stack. */
+/** 导出是只读操作，不进入撤销栈。 */
 function handleExportResult(result: ExportResult) {
   if (result.ok) {
     showToast('exported', t('exportDone', { count: result.count }), t('exportLocalNote'))
     return
   }
-  const description =
-    result.failure === 'empty' ? t('exportNoRecords') : t('exportWorkbookFailed')
+  const description = result.failure === 'empty' ? t('exportNoRecords') : t('exportWorkbookFailed')
   showToast('error', t('exportFailed'), description)
 }
 </script>
@@ -343,7 +224,7 @@ function handleExportResult(result: ExportResult) {
         :is-filtering="isFiltering"
         :view-mode="viewMode"
         @edit="openEdit"
-        @remove="pendingDelete = $event"
+        @remove="requestDelete"
         @view="openDetail"
         @clear-filters="clearFilters"
       />
@@ -360,7 +241,7 @@ function handleExportResult(result: ExportResult) {
       class="overlay"
       role="alertdialog"
       aria-modal="true"
-      @click.self="pendingDelete = null"
+      @click.self="cancelDelete"
     >
       <div class="dialog dialog-confirm">
         <h2 class="dialog-title">{{ t('confirmDeleteTitle') }}</h2>
@@ -373,7 +254,7 @@ function handleExportResult(result: ExportResult) {
           }}
         </p>
         <div class="dialog-actions">
-          <button type="button" class="btn btn-ghost" @click="pendingDelete = null">
+          <button type="button" class="btn btn-ghost" @click="cancelDelete">
             {{ t('confirmCancel') }}
           </button>
           <button type="button" class="btn btn-danger" @click="confirmDelete">
@@ -387,8 +268,8 @@ function handleExportResult(result: ExportResult) {
       :open="detailOpen"
       :job="detailJob"
       @close="closeDetail"
-      @edit="handleDetailEdit"
-      @remove="handleDetailRemove"
+      @edit="editFromDetail"
+      @remove="removeFromDetail"
     />
 
     <AppToast

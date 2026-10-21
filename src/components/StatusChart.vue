@@ -30,6 +30,7 @@ const collapsed = ref(
 )
 let chart: echarts.ECharts | null = null
 let observer: ResizeObserver | null = null
+let resizeTimer: ReturnType<typeof setTimeout> | undefined
 
 const hasRecords = computed(() => props.total > 0)
 
@@ -106,13 +107,19 @@ function render() {
   chart?.setOption(option.value, true)
 }
 
-/** 展开时补建实例并重新计算尺寸，实例不会被重复初始化 */
-async function toggleCollapsed() {
+/**
+ * 展开时补建实例并恢复尺寸，实例不会被重复初始化。
+ * 尺寸在高度过渡结束后再计算，避免图表被拉伸。
+ */
+function toggleCollapsed() {
   collapsed.value = !collapsed.value
   if (collapsed.value) return
-  await nextTick()
-  ensureChart()
-  chart?.resize()
+  nextTick(() => {
+    ensureChart()
+    chart?.setOption(option.value, true)
+    if (resizeTimer !== undefined) clearTimeout(resizeTimer)
+    resizeTimer = setTimeout(() => chart?.resize(), 220)
+  })
 }
 
 onMounted(render)
@@ -122,6 +129,7 @@ watch(() => props.total, render)
 watch(collapsed, render)
 
 onBeforeUnmount(() => {
+  if (resizeTimer !== undefined) clearTimeout(resizeTimer)
   observer?.disconnect()
   observer = null
   chart?.dispose()
@@ -130,7 +138,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="chart-card" :aria-label="t('chartTitle')">
+  <section class="chart-card" :class="{ 'is-collapsed': collapsed }" :aria-label="t('chartTitle')">
     <div class="chart-head">
       <h2 class="chart-title">{{ t('chartTitle') }}</h2>
       <button
@@ -156,7 +164,7 @@ onBeforeUnmount(() => {
     <p class="sr-only">{{ t('chartSummary', { total, detail: summary }) }}</p>
     <p v-if="!hasRecords" class="chart-empty">{{ t('chartEmpty') }}</p>
     <div
-      v-show="hasRecords && !collapsed"
+      v-show="hasRecords"
       ref="container"
       class="chart-canvas"
       role="img"

@@ -175,7 +175,7 @@ export const messages = {
     statOffer: 'Offer',
 
     filterSearchLabel: 'Search company or position',
-    filterSearchPlaceholder: 'Company or position keyword',
+    filterSearchPlaceholder: 'Company or position',
     filterStatusLabel: 'Filter by status',
     filterStatusAll: 'All statuses',
     filterDateLabel: 'Application date range',
@@ -306,17 +306,35 @@ function isLocale(value: unknown): value is Locale {
   return value === 'zh-CN' || value === 'en-US'
 }
 
-function readStoredLocale(): Locale {
+function readStoredLocale(): Locale | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    return isLocale(raw) ? raw : DEFAULT_LOCALE
+    return isLocale(raw) ? raw : null
   } catch {
-    return DEFAULT_LOCALE
+    return null
   }
 }
 
-/** 全局共享的语言状态，切换后所有界面立即更新 */
-const locale = ref<Locale>(readStoredLocale())
+/** 首次访问时按浏览器语言选择：zh* → zh-CN，en* → en-US，其余回退简体中文。 */
+function detectBrowserLocale(): Locale {
+  if (typeof navigator === 'undefined') return DEFAULT_LOCALE
+  const tags: string[] = []
+  if (Array.isArray(navigator.languages)) tags.push(...navigator.languages)
+  if (navigator.language) tags.push(navigator.language)
+  for (const tag of tags) {
+    if (!tag) continue
+    const lower = tag.toLowerCase()
+    if (lower === 'zh' || lower.startsWith('zh-') || lower.startsWith('zh_')) return 'zh-CN'
+    if (lower === 'en' || lower.startsWith('en-') || lower.startsWith('en_')) return 'en-US'
+  }
+  return DEFAULT_LOCALE
+}
+
+/**
+ * 语言优先级：已保存的有效偏好 > 浏览器语言 > 简体中文。
+ * 读取时不会写入存储，只有用户主动切换才会持久化。
+ */
+const locale = ref<Locale>(readStoredLocale() ?? detectBrowserLocale())
 
 function interpolate(text: string, vars?: Record<string, string | number>): string {
   if (!vars) return text
