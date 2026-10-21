@@ -92,21 +92,8 @@ function labelFor(status: JobStatus | 'all'): string {
       </div>
     </div>
 
-    <!-- 第三组：清除筛选与显示方式 -->
+    <!-- 第三组：显示方式与清除筛选，始终作为一个整体靠右 -->
     <div class="toolbar-group toolbar-actions">
-      <div class="field field-actions">
-        <span id="clear-filters-label" class="sr-only">{{ t('filterActionsLabel') }}</span>
-        <button
-          type="button"
-          class="btn btn-ghost field-clear-btn"
-          :disabled="!props.hasActiveFilters"
-          aria-labelledby="clear-filters-label"
-          @click="emit('clearFilters')"
-        >
-          {{ t('filterClear') }}
-        </button>
-      </div>
-
       <div class="field field-view">
         <span id="view-toggle-label" class="field-view-label">{{ t('filterViewLabel') }}</span>
         <div class="view-toggle" role="group" aria-labelledby="view-toggle-label">
@@ -158,6 +145,19 @@ function labelFor(status: JobStatus | 'all'): string {
             <span>{{ t('viewAuto') }}</span>
           </button>
         </div>
+      </div>
+
+      <div class="field field-actions">
+        <span id="clear-filters-label" class="sr-only">{{ t('filterActionsLabel') }}</span>
+        <button
+          type="button"
+          class="btn btn-ghost field-clear-btn"
+          :disabled="!props.hasActiveFilters"
+          aria-labelledby="clear-filters-label"
+          @click="emit('clearFilters')"
+        >
+          {{ t('filterClear') }}
+        </button>
       </div>
     </div>
 

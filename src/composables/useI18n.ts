@@ -192,7 +192,7 @@ export const messages = {
 
     viewTable: 'Table',
     viewCards: 'Cards',
-    viewAuto: 'Follow screen',
+    viewAuto: 'Auto',
     viewAutoTitle: 'Choose automatically by screen width (current: {view})',
 
     tableCompany: 'Company',

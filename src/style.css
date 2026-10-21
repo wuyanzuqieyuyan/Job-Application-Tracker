@@ -43,7 +43,8 @@ body {
    2. 页面布局（页头、主体、Dashboard）
    ============================================================ */
 .app {
-  max-width: 1080px;
+  /* 宽屏留出足够空间，让筛选栏的操作区可以与筛选条件同处第一行 */
+  max-width: 1400px;
   margin: 0 auto;
   padding: 24px 20px 64px;
 }
@@ -405,7 +406,7 @@ textarea {
 }
 
 .toolbar-search {
-  flex: 0 0 230px;
+  flex: 0 0 210px;
 }
 
 .toolbar-filters {
@@ -413,6 +414,7 @@ textarea {
   flex-wrap: wrap;
 }
 
+/* 操作区整体靠右；空间不足时整组换行，仍保持右对齐 */
 .toolbar-actions {
   flex: 0 0 auto;
   margin-left: auto;
@@ -431,7 +433,7 @@ textarea {
 }
 
 .toolbar .field-status {
-  flex: 0 0 165px;
+  flex: 0 0 160px;
 }
 
 .toolbar .field-range {
@@ -740,7 +742,7 @@ textarea {
 }
 
 .job-table thead th:nth-child(3) {
-  width: 11%;
+  width: 12%;
 }
 
 .job-table thead th:nth-child(4) {
@@ -748,7 +750,7 @@ textarea {
 }
 
 .job-table thead th:nth-child(5) {
-  width: 22%;
+  width: 21%;
 }
 
 .job-table thead th.col-actions {
@@ -1601,12 +1603,6 @@ textarea {
     gap: 4px;
   }
 
-  .field-clear-btn {
-    width: 100%;
-    min-width: 0;
-  }
-
-  /* 纵向排列时 flex-basis 会变成高度，这里统一改为内容高度 */
   .field-search,
   .field-status,
   .field-range,
@@ -1618,32 +1614,67 @@ textarea {
   }
 
   .field-actions {
-    width: 100%;
+    width: auto;
     /* stacked layout: the cross axis is horizontal, so reset the baseline */
-    align-self: stretch;
-  }
-
-  .field-clear-btn {
-    width: 100%;
-  }
-
-  .field-row {
-    flex-direction: column;
+    align-self: flex-end;
   }
 
   .field-view {
-    width: 100%;
+    width: auto;
     /* 纵向排列时右侧对齐会失效，恢复为左对齐 */
     margin-left: 0;
   }
 
   .view-toggle {
-    width: 100%;
+    width: auto;
   }
 
   .view-toggle-btn {
     flex: 1 1 0;
     justify-content: center;
+  }
+
+  /* 操作区在窄屏仍保持一行：显示方式可压缩，清除筛选宽度固定 */
+  .toolbar-actions {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-end;
+    gap: 10px;
+  }
+
+  .toolbar-actions .field-view {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: auto;
+  }
+
+  .toolbar-actions .view-toggle {
+    /* 不允许压缩到内容宽度以下，否则分段文字会与清除筛选重叠 */
+    min-width: auto;
+    flex: 0 1 auto;
+    gap: 2px;
+    padding: 2px;
+  }
+
+  .toolbar-actions .view-toggle-btn {
+    /* 分段保持自身文字宽度，不被压缩 */
+    flex: 0 0 auto;
+    padding: 6px;
+  }
+
+  .toolbar-actions .field-actions {
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  .toolbar-actions .field-clear-btn {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 118px;
+  }
+
+  .field-row {
+    flex-direction: column;
   }
 
   /* 窄屏用圆形图标按钮，减少对卡片操作区的遮挡 */
