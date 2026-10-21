@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, defineAsyncComponent, onBeforeUnmount, ref } from 'vue'
 import StatsBar from './components/StatsBar.vue'
 import SearchFilter from './components/SearchFilter.vue'
 import JobForm from './components/JobForm.vue'
@@ -8,6 +8,11 @@ import AppToast from './components/AppToast.vue'
 import type { ToastVariant } from './components/AppToast.vue'
 import ExportButton from './components/ExportButton.vue'
 import type { ExportResult } from './utils/exportJobs'
+import type { StatusSlice } from './components/StatusChart.vue'
+import { STATUS_COLORS, STATUS_LABELS, STATUS_ORDER } from './types'
+
+// the chart library is only fetched when the dashboard is rendered
+const StatusChart = defineAsyncComponent(() => import('./components/StatusChart.vue'))
 import { useJobs } from './composables/useJobs'
 import { useViewMode } from './composables/useViewMode'
 import type { ViewPreference } from './composables/useViewMode'
@@ -24,6 +29,7 @@ const {
   patchFilters,
   clearFilters,
   stats,
+  statusCounts,
   addJob,
   updateJob,
   deleteJob,
@@ -59,6 +65,16 @@ let toastTimer: ReturnType<typeof setTimeout> | undefined
 const TOAST_EXIT_MS = 180
 
 const isFiltering = computed(() => hasActiveFilters.value)
+
+/** Chart slices are derived from the same record counts as the stat cards. */
+const statusSlices = computed<StatusSlice[]>(() =>
+  STATUS_ORDER.map((status) => ({
+    status,
+    label: STATUS_LABELS[status],
+    count: statusCounts.value[status],
+    color: STATUS_COLORS[status],
+  })),
+)
 
 const undoRemainingMs = computed(() => undoStack.remainingMs.value)
 /** Share of the undo window left, derived from the undo stack's own clock. */
@@ -231,7 +247,10 @@ function handleExportResult(result: ExportResult) {
     </header>
 
     <main class="app-main">
-      <StatsBar :stats="stats" />
+      <div class="dashboard">
+        <StatsBar :stats="stats" />
+        <StatusChart :data="statusSlices" :total="stats.total" />
+      </div>
 
       <SearchFilter
         :filters="filters"

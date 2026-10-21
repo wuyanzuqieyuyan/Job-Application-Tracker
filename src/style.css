@@ -88,6 +88,61 @@ body {
   gap: 20px;
 }
 
+.dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+.dashboard .stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  min-width: 0;
+  /* reserve the space so the lazily loaded chart does not shift the layout */
+  min-height: 300px;
+}
+
+.chart-title {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chart-canvas {
+  width: 100%;
+  height: 240px;
+  min-width: 0;
+}
+
+.chart-empty {
+  margin: 0;
+  padding: 96px 8px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -938,6 +993,12 @@ textarea {
   white-space: nowrap;
 }
 
+@media (max-width: 1020px) {
+  .dashboard {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 640px) {
   .app {
     padding: 16px 14px 56px;
@@ -945,6 +1006,14 @@ textarea {
 
   .stats {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chart-canvas {
+    height: 220px;
   }
 
   .toolbar {

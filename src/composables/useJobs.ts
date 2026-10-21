@@ -161,15 +161,26 @@ const filteredJobs = computed<Job[]>(() => {
     .map((entry) => entry.job)
 })
 
-const stats = computed(() => {
-  const list = jobs.value
-  return {
-    total: list.length,
-    applied: list.filter((j) => j.status === 'applied').length,
-    interviewing: list.filter((j) => j.status === 'interviewing').length,
-    offer: list.filter((j) => j.status === 'offer').length,
+/** Record count per status. Single source of truth for the statistics. */
+const statusCounts = computed<Record<JobStatus, number>>(() => {
+  const counts: Record<JobStatus, number> = {
+    applied: 0,
+    interviewing: 0,
+    offer: 0,
+    rejected: 0,
   }
+  for (const job of jobs.value) {
+    counts[job.status] += 1
+  }
+  return counts
 })
+
+const stats = computed(() => ({
+  total: jobs.value.length,
+  applied: statusCounts.value.applied,
+  interviewing: statusCounts.value.interviewing,
+  offer: statusCounts.value.offer,
+}))
 
 export interface JobFormInput {
   company: string
@@ -275,6 +286,7 @@ export function useJobs() {
     patchFilters,
     clearFilters,
     stats,
+    statusCounts,
     addJob,
     updateJob,
     deleteJob,

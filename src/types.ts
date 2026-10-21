@@ -18,6 +18,14 @@ export const STATUS_LABELS: Record<JobStatus, string> = {
   rejected: '已拒绝',
 }
 
+/** Chart colours, kept in sync with the status badge palette. */
+export const STATUS_COLORS: Record<JobStatus, string> = {
+  applied: '#2563eb',
+  interviewing: '#d97706',
+  offer: '#16a34a',
+  rejected: '#94a3b8',
+}
+
 /** Sort order for the record list, by application date. */
 export type SortOrder = 'date-desc' | 'date-asc'
 
