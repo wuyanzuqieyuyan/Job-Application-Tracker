@@ -90,13 +90,21 @@ body {
 
 .dashboard {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-columns: minmax(0, 1fr) 360px;
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
 }
 
+/* 2 x 2 KPI tiles fill the left column, so it matches the chart height */
 .dashboard .stats {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: stretch;
+}
+
+.dashboard .stat-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .chart-card {
@@ -233,6 +241,7 @@ textarea {
 .field-range {
   flex: 1 1 260px;
   min-width: 220px;
+  max-width: 300px;
 }
 
 .field-range-label {
@@ -267,12 +276,20 @@ textarea {
 .field-actions {
   flex: 0 0 auto;
   min-width: 0;
+  /* sit the button on the same baseline as the other filter controls */
+  align-self: flex-end;
 }
 
-.field-actions-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted);
+.field-clear-btn {
+  white-space: nowrap;
+  height: 43px;
+}
+
+/* every filter control shares one height, so the row lines up perfectly */
+.toolbar input,
+.toolbar select,
+.toolbar .field-clear-btn {
+  height: 43px;
 }
 
 .field-error {
@@ -541,16 +558,32 @@ textarea {
   overflow-wrap: anywhere;
   word-break: normal;
   min-width: 0;
+  /* single line: the full text stays available in the detail drawer */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cell-position {
   overflow-wrap: anywhere;
   word-break: normal;
   min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cell-notes {
   color: var(--text-muted);
+  min-width: 0;
+}
+
+/* notes: at most two lines, the full text stays available in the drawer */
+.cell-notes-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
   overflow-wrap: anywhere;
   word-break: normal;
   min-width: 0;
@@ -570,6 +603,40 @@ textarea {
 .col-actions-list .btn {
   flex: 0 0 auto;
   white-space: nowrap;
+}
+
+/* Row level actions stay quiet: neutral text for edit, soft red for delete */
+.col-actions-list .btn-ghost,
+.card-actions .btn-ghost {
+  color: #475569;
+  background: transparent;
+  border-color: transparent;
+}
+
+.col-actions-list .btn-ghost:hover,
+.card-actions .btn-ghost:hover {
+  color: #0f172a;
+  background: #f1f5f9;
+  border-color: transparent;
+}
+
+.col-actions-list .btn-danger,
+.card-actions .btn-danger {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fee2e2;
+}
+
+.col-actions-list .btn-danger:hover,
+.card-actions .btn-danger:hover {
+  color: #991b1b;
+  background: #fee2e2;
+  border-color: #fecaca;
+}
+
+.col-actions-list .btn-danger:active,
+.card-actions .btn-danger:active {
+  background: #fecaca;
 }
 
 @media (max-width: 1020px) {
@@ -1179,6 +1246,10 @@ textarea {
   .dashboard {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .dashboard .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -1215,6 +1286,12 @@ textarea {
   }
 
   .field-actions {
+    width: 100%;
+    /* stacked layout: the cross axis is horizontal, so reset the baseline */
+    align-self: stretch;
+  }
+
+  .field-clear-btn {
     width: 100%;
   }
 

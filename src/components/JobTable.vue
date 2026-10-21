@@ -42,15 +42,19 @@ const emit = defineEmits<{
             @keydown.enter.prevent="emit('view', job)"
             @keydown.space.prevent="emit('view', job)"
           >
-            <td class="cell-company">{{ job.company }}</td>
-            <td>{{ job.position }}</td>
+            <td class="cell-company" :title="job.company">{{ job.company }}</td>
+            <td class="cell-position" :title="job.position">{{ job.position }}</td>
             <td>{{ job.appliedDate }}</td>
             <td>
               <span class="badge" :class="`badge-${job.status}`">
                 {{ STATUS_LABELS[job.status] }}
               </span>
             </td>
-            <td class="cell-notes">{{ job.notes || '—' }}</td>
+            <td class="cell-notes">
+              <div class="cell-notes-text" :title="job.notes || undefined">
+                {{ job.notes || '—' }}
+              </div>
+            </td>
             <td class="col-actions">
               <div class="col-actions-list">
                 <button

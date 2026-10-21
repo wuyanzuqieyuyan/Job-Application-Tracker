@@ -84,11 +84,12 @@ function labelFor(status: JobStatus | 'all'): string {
     </div>
 
     <div class="field field-actions">
-      <span class="field-actions-label" aria-hidden="true">筛选操作</span>
+      <span id="clear-filters-label" class="sr-only">筛选操作</span>
       <button
         type="button"
-        class="btn btn-sm btn-ghost"
+        class="btn btn-ghost field-clear-btn"
         :disabled="!props.hasActiveFilters"
+        aria-labelledby="clear-filters-label"
         @click="emit('clearFilters')"
       >
         清除筛选
