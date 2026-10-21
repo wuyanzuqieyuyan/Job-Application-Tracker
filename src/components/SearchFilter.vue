@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { STATUS_LABELS, STATUS_ORDER, SORT_LABELS } from '../types'
+import { STATUS_ORDER } from '../types'
 import type { JobFilters, JobStatus, SortOrder } from '../types'
 import type { ViewMode, ViewPreference } from '../composables/useViewMode'
+import { useI18n } from '../composables/useI18n'
 
 const props = defineProps<{
   filters: JobFilters
   hasActiveFilters: boolean
-  dateRangeError: string
+  dateRangeInvalid: boolean
   viewMode: ViewMode
   isAuto: boolean
 }>()
@@ -17,29 +18,31 @@ const emit = defineEmits<{
   (e: 'update:viewPreference', value: ViewPreference): void
 }>()
 
+const { t, statusLabel } = useI18n()
+
 const statuses: (JobStatus | 'all')[] = ['all', ...STATUS_ORDER]
 const sortOrders: SortOrder[] = ['date-desc', 'date-asc']
 
 function labelFor(status: JobStatus | 'all'): string {
-  return status === 'all' ? '全部状态' : STATUS_LABELS[status]
+  return status === 'all' ? t('filterStatusAll') : statusLabel(status)
 }
 </script>
 
 <template>
-  <section class="toolbar" aria-label="搜索与筛选">
+  <section class="toolbar" :aria-label="t('filterSectionLabel')">
     <div class="field field-search">
-      <label for="search">搜索公司或职位</label>
+      <label for="search">{{ t('filterSearchLabel') }}</label>
       <input
         id="search"
         type="search"
-        placeholder="输入公司或职位关键字"
+        :placeholder="t('filterSearchPlaceholder')"
         :value="props.filters.keyword"
         @input="emit('update:filters', { keyword: ($event.target as HTMLInputElement).value })"
       />
     </div>
 
     <div class="field field-status">
-      <label for="status">按状态筛选</label>
+      <label for="status">{{ t('filterStatusLabel') }}</label>
       <select
         id="status"
         :value="props.filters.status"
@@ -52,18 +55,18 @@ function labelFor(status: JobStatus | 'all'): string {
     </div>
 
     <div class="field field-range">
-      <span class="field-range-label" id="date-range-label">投递日期范围</span>
+      <span class="field-range-label" id="date-range-label">{{ t('filterDateLabel') }}</span>
       <div class="field-range-inputs" role="group" aria-labelledby="date-range-label">
         <input
           type="date"
-          aria-label="起始日期"
+          :aria-label="t('filterDateFrom')"
           :value="props.filters.dateFrom"
           @change="emit('update:filters', { dateFrom: ($event.target as HTMLInputElement).value })"
         />
         <span class="field-range-sep" aria-hidden="true">→</span>
         <input
           type="date"
-          aria-label="结束日期"
+          :aria-label="t('filterDateTo')"
           :value="props.filters.dateTo"
           @change="emit('update:filters', { dateTo: ($event.target as HTMLInputElement).value })"
         />
@@ -71,20 +74,20 @@ function labelFor(status: JobStatus | 'all'): string {
     </div>
 
     <div class="field field-sort">
-      <label for="sort">排序方式</label>
+      <label for="sort">{{ t('filterSortLabel') }}</label>
       <select
         id="sort"
         :value="props.filters.sortOrder"
         @change="emit('update:filters', { sortOrder: ($event.target as HTMLSelectElement).value as SortOrder })"
       >
         <option v-for="order in sortOrders" :key="order" :value="order">
-          {{ SORT_LABELS[order] }}
+          {{ t(order === 'date-desc' ? 'filterSortDesc' : 'filterSortAsc') }}
         </option>
       </select>
     </div>
 
     <div class="field field-actions">
-      <span id="clear-filters-label" class="sr-only">筛选操作</span>
+      <span id="clear-filters-label" class="sr-only">{{ t('filterActionsLabel') }}</span>
       <button
         type="button"
         class="btn btn-ghost field-clear-btn"
@@ -92,12 +95,12 @@ function labelFor(status: JobStatus | 'all'): string {
         aria-labelledby="clear-filters-label"
         @click="emit('clearFilters')"
       >
-        清除筛选
+        {{ t('filterClear') }}
       </button>
     </div>
 
     <div class="field field-view">
-      <span id="view-toggle-label" class="field-view-label">显示方式</span>
+      <span id="view-toggle-label" class="field-view-label">{{ t('filterViewLabel') }}</span>
       <div class="view-toggle" role="group" aria-labelledby="view-toggle-label">
         <button
           type="button"
@@ -115,7 +118,7 @@ function labelFor(status: JobStatus | 'all'): string {
               stroke-linecap="round"
             />
           </svg>
-          <span>表格</span>
+          <span>{{ t('viewTable') }}</span>
         </button>
         <button
           type="button"
@@ -130,25 +133,27 @@ function labelFor(status: JobStatus | 'all'): string {
             <rect x="2" y="9" width="5" height="5" rx="1" fill="none" stroke="currentColor" stroke-width="1.6" />
             <rect x="9" y="9" width="5" height="5" rx="1" fill="none" stroke="currentColor" stroke-width="1.6" />
           </svg>
-          <span>卡片</span>
+          <span>{{ t('viewCards') }}</span>
         </button>
         <button
           type="button"
           class="view-toggle-btn view-toggle-auto"
           :class="{ 'is-active': isAuto }"
           :aria-pressed="isAuto"
-          :title="`跟随屏幕宽度自动选择（当前：${viewMode === 'table' ? '表格' : '卡片'}）`"
+          :title="t('viewAutoTitle', { view: viewMode === 'table' ? t('viewTable') : t('viewCards') })"
           @click="emit('update:viewPreference', 'auto')"
         >
           <svg class="view-toggle-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
             <rect x="1.5" y="2.5" width="13" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6" />
             <path d="M5.5 13.5h5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
           </svg>
-          <span>跟随屏幕</span>
+          <span>{{ t('viewAuto') }}</span>
         </button>
       </div>
     </div>
 
-    <p v-if="dateRangeError" class="field-error" role="alert">{{ dateRangeError }}</p>
+    <p v-if="dateRangeInvalid" class="field-error" role="alert">
+      {{ t('filterDateRangeError') }}
+    </p>
   </section>
 </template>

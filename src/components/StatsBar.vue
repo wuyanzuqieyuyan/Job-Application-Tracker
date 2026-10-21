@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from '../composables/useI18n'
+
 interface Stats {
   total: number
   applied: number
@@ -8,19 +10,21 @@ interface Stats {
 
 defineProps<{ stats: Stats }>()
 
+const { t } = useI18n()
+
 const cards = [
-  { key: 'total', label: '总申请数' },
-  { key: 'applied', label: '待回复' },
-  { key: 'interviewing', label: '面试中' },
-  { key: 'offer', label: '录取' },
+  { key: 'total', label: 'statTotal' },
+  { key: 'applied', label: 'statApplied' },
+  { key: 'interviewing', label: 'statInterviewing' },
+  { key: 'offer', label: 'statOffer' },
 ] as const
 </script>
 
 <template>
-  <section class="stats" aria-label="申请统计">
+  <section class="stats" :aria-label="t('statsLabel')">
     <div v-for="card in cards" :key="card.key" class="stat-card">
       <span class="stat-value">{{ stats[card.key] }}</span>
-      <span class="stat-label">{{ card.label }}</span>
+      <span class="stat-label">{{ t(card.label) }}</span>
     </div>
   </section>
 </template>

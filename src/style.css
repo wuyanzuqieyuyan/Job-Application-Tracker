@@ -51,6 +51,91 @@ body {
   flex-wrap: wrap;
 }
 
+/* 主要操作区：导出与新增并排，样式一致 */
+.app-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 43px;
+  padding: 0 12px;
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--border);
+  white-space: nowrap;
+}
+
+.btn-lang:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.lang-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 43px;
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--border);
+  white-space: nowrap;
+}
+
+.btn-export:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+/* 悬浮新增按钮：滚动长列表时随时可用 */
+.fab-add {
+  position: fixed;
+  right: 20px;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 16px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.28);
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fab-add:hover {
+  background: var(--primary-hover);
+  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.34);
+}
+
+.fab-add:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+.fab-add-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -234,6 +319,12 @@ textarea {
   resize: vertical;
 }
 
+/* 搜索框需要足够宽度，桌面端才能完整显示 placeholder 与输入内容 */
+.field-search {
+  flex: 1 1 240px;
+  min-width: 210px;
+}
+
 .field-status {
   max-width: 200px;
 }
@@ -307,6 +398,8 @@ textarea {
 .field-view {
   flex: 0 0 auto;
   min-width: 0;
+  /* 显示方式控件靠工具栏右侧 */
+  margin-left: auto;
 }
 
 .field-view-label {
@@ -1254,7 +1347,7 @@ textarea {
 
 @media (max-width: 640px) {
   .app {
-    padding: 16px 14px 56px;
+    padding: 16px 14px 96px;
   }
 
   .stats {
@@ -1301,6 +1394,8 @@ textarea {
 
   .field-view {
     width: 100%;
+    /* 纵向排列时右侧对齐会失效，恢复为左对齐 */
+    margin-left: 0;
   }
 
   .view-toggle {
@@ -1310,6 +1405,20 @@ textarea {
   .view-toggle-btn {
     flex: 1 1 0;
     justify-content: center;
+  }
+
+  /* 窄屏用圆形图标按钮，减少对卡片操作区的遮挡 */
+  .fab-add {
+    right: 14px;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .fab-add span {
+    display: none;
   }
 
   .toast-wrap {

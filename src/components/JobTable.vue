@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Job } from '../types'
-import { STATUS_LABELS } from '../types'
 import type { ViewMode } from '../composables/useViewMode'
+import { useI18n } from '../composables/useI18n'
 
 defineProps<{
   jobs: Job[]
@@ -16,20 +16,22 @@ const emit = defineEmits<{
   (e: 'view', job: Job): void
   (e: 'clearFilters'): void
 }>()
+
+const { t, statusLabel } = useI18n()
 </script>
 
 <template>
-  <section class="table-wrap" aria-label="申请记录列表">
+  <section class="table-wrap" :aria-label="t('tableListLabel')">
     <template v-if="jobs.length > 0">
       <table v-if="viewMode === 'table'" class="job-table">
         <thead>
           <tr>
-            <th scope="col">公司</th>
-            <th scope="col">岗位</th>
-            <th scope="col">申请日期</th>
-            <th scope="col">状态</th>
-            <th scope="col">备注</th>
-            <th scope="col" class="col-actions">操作</th>
+            <th scope="col">{{ t('tableCompany') }}</th>
+            <th scope="col">{{ t('tablePosition') }}</th>
+            <th scope="col">{{ t('tableDate') }}</th>
+            <th scope="col">{{ t('tableStatus') }}</th>
+            <th scope="col">{{ t('tableNotes') }}</th>
+            <th scope="col" class="col-actions">{{ t('tableActions') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -47,7 +49,7 @@ const emit = defineEmits<{
             <td>{{ job.appliedDate }}</td>
             <td>
               <span class="badge" :class="`badge-${job.status}`">
-                {{ STATUS_LABELS[job.status] }}
+                {{ statusLabel(job.status) }}
               </span>
             </td>
             <td class="cell-notes">
@@ -62,14 +64,14 @@ const emit = defineEmits<{
                   class="btn btn-sm btn-ghost"
                   @click.stop="emit('edit', job)"
                 >
-                  编辑
+                  {{ t('cardEdit') }}
                 </button>
                 <button
                   type="button"
                   class="btn btn-sm btn-danger"
                   @click.stop="emit('remove', job)"
                 >
-                  删除
+                  {{ t('cardDelete') }}
                 </button>
               </div>
             </td>
@@ -85,28 +87,28 @@ const emit = defineEmits<{
               <p class="card-position">{{ job.position }}</p>
             </div>
             <span class="badge" :class="`badge-${job.status}`">
-              {{ STATUS_LABELS[job.status] }}
+              {{ statusLabel(job.status) }}
             </span>
           </div>
           <dl class="card-meta">
             <div class="card-meta-row">
-              <dt>申请日期</dt>
+              <dt>{{ t('cardDate') }}</dt>
               <dd>{{ job.appliedDate }}</dd>
             </div>
             <div class="card-meta-row">
-              <dt>备注</dt>
+              <dt>{{ t('cardNotes') }}</dt>
               <dd class="card-notes">{{ job.notes || '—' }}</dd>
             </div>
           </dl>
           <div class="card-actions">
             <button type="button" class="btn btn-sm btn-ghost" @click="emit('view', job)">
-              详情
+              {{ t('cardDetail') }}
             </button>
             <button type="button" class="btn btn-sm btn-ghost" @click="emit('edit', job)">
-              编辑
+              {{ t('cardEdit') }}
             </button>
             <button type="button" class="btn btn-sm btn-danger" @click="emit('remove', job)">
-              删除
+              {{ t('cardDelete') }}
             </button>
           </div>
         </article>
@@ -115,18 +117,18 @@ const emit = defineEmits<{
 
     <div v-else class="empty-state">
       <template v-if="!hasAnyRecord">
-        <p class="empty-title">还没有申请记录</p>
-        <p class="empty-desc">点击右上角“新增记录”开始追踪你的求职进度。</p>
+        <p class="empty-title">{{ t('emptyNoRecordsTitle') }}</p>
+        <p class="empty-desc">{{ t('emptyNoRecordsDesc') }}</p>
       </template>
       <template v-else-if="isFiltering">
-        <p class="empty-title">没有匹配的记录</p>
-        <p class="empty-desc">尝试调整搜索关键字、状态或日期范围。</p>
+        <p class="empty-title">{{ t('emptyNoMatchTitle') }}</p>
+        <p class="empty-desc">{{ t('emptyNoMatchDesc') }}</p>
         <button type="button" class="btn btn-sm btn-ghost empty-action" @click="emit('clearFilters')">
-          清除筛选条件
+          {{ t('emptyClearFilters') }}
         </button>
       </template>
       <template v-else>
-        <p class="empty-title">暂无记录</p>
+        <p class="empty-title">{{ t('emptyTitle') }}</p>
       </template>
     </div>
   </section>

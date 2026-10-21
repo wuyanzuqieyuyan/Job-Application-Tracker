@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { UndoEntry } from '../composables/useUndoStack'
+import { useI18n } from '../composables/useI18n'
 
 /** Semantic variant of a toast; drives the icon, colour and a11y semantics. */
 export type ToastVariant = 'added' | 'deleted' | 'edited' | 'undone' | 'exported' | 'error'
@@ -21,10 +22,7 @@ const emit = defineEmits<{
   (e: 'close'): void
 }>()
 
-const isError = computed(() => props.variant === 'error')
-
-const role = computed(() => (isError.value ? 'alert' : 'status'))
-const live = computed(() => (isError.value ? 'assertive' : 'polite'))
+const { t } = useI18n()
 
 const remainingSeconds = computed(() => Math.max(0, Math.ceil(props.remainingMs / 1000)))
 
@@ -32,9 +30,12 @@ const undoLabel = computed(() => {
   const entry = props.undoEntry
   if (!entry) return ''
   return entry.type === 'delete'
-    ? `撤销删除「${entry.job.company}」`
-    : `撤销新增「${entry.job.company}」`
+    ? t('toastUndoDelete', { company: entry.job.company })
+    : t('toastUndoAdd', { company: entry.job.company })
 })
+
+const role = computed(() => (props.variant === 'error' ? 'alert' : 'status'))
+const live = computed(() => (props.variant === 'error' ? 'assertive' : 'polite'))
 
 const progressWidth = computed(() => {
   const ratio = Math.max(0, Math.min(1, props.progress))
@@ -143,7 +144,7 @@ const progressWidth = computed(() => {
         <p class="toast-title">{{ title }}</p>
         <p v-if="description" class="toast-desc">{{ description }}</p>
         <p v-if="undoEntry" class="toast-desc toast-countdown">
-          剩余 {{ remainingSeconds }} 秒可撤销
+          {{ t('toastCountdown', { seconds: remainingSeconds }) }}
         </p>
       </div>
 
@@ -156,12 +157,12 @@ const progressWidth = computed(() => {
           :aria-label="undoLabel"
           @click="emit('undo')"
         >
-          撤销
+          {{ t('toastUndo') }}
         </button>
         <button
           type="button"
           class="toast-close"
-          aria-label="关闭提示"
+          :aria-label="t('toastClose')"
           @click="emit('close')"
         >
           <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onBeforeUnmount, ref } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, ref, watchEffect } from 'vue'
 import StatsBar from './components/StatsBar.vue'
 import SearchFilter from './components/SearchFilter.vue'
 import JobForm from './components/JobForm.vue'
@@ -10,7 +10,7 @@ import ExportButton from './components/ExportButton.vue'
 import type { ExportResult } from './utils/exportJobs'
 import type { StatusSlice } from './components/StatusChart.vue'
 import JobDetailDrawer from './components/JobDetailDrawer.vue'
-import { STATUS_COLORS, STATUS_LABELS, STATUS_ORDER } from './types'
+import { STATUS_COLORS, STATUS_ORDER } from './types'
 
 // the chart library is only fetched when the dashboard is rendered
 const StatusChart = defineAsyncComponent(() => import('./components/StatusChart.vue'))
@@ -19,6 +19,7 @@ import { useViewMode } from './composables/useViewMode'
 import type { ViewPreference } from './composables/useViewMode'
 import { useUndoStack, UNDO_WINDOW_MS } from './composables/useUndoStack'
 import type { UndoEntry } from './composables/useUndoStack'
+import { useI18n } from './composables/useI18n'
 import type { Job } from './types'
 
 const {
@@ -26,7 +27,7 @@ const {
   filteredJobs,
   filters,
   hasActiveFilters,
-  dateRangeError,
+  dateRangeInvalid,
   patchFilters,
   clearFilters,
   stats,
@@ -39,6 +40,12 @@ const {
 } = useJobs()
 
 const { viewMode, isAuto, setViewMode, clearPreference } = useViewMode()
+const { t, statusLabel, locale, toggleLocale } = useI18n()
+
+// 同步文档语言，屏幕阅读器与原生日期控件会跟随界面语言
+watchEffect(() => {
+  document.documentElement.lang = locale.value === 'zh-CN' ? 'zh-CN' : 'en'
+})
 
 function handleViewPreference(value: ViewPreference) {
   if (value === 'auto') {
@@ -96,7 +103,7 @@ const isFiltering = computed(() => hasActiveFilters.value)
 const statusSlices = computed<StatusSlice[]>(() =>
   STATUS_ORDER.map((status) => ({
     status,
-    label: STATUS_LABELS[status],
+    label: statusLabel(status),
     count: statusCounts.value[status],
     color: STATUS_COLORS[status],
   })),
@@ -178,14 +185,16 @@ function handleUndo() {
   let description = ''
   if (entry.type === 'delete') {
     ok = restoreJob({ job: entry.job, index: entry.index })
-    title = ok ? '已恢复记录' : '撤销失败'
+    title = ok ? t('toastRestored') : t('toastUndoFailed')
     description = ok
-      ? `「${entry.job.company}」已还原到原来的位置`
-      : '记录已存在，无法重复恢复'
+      ? t('toastRestoredDesc', { company: entry.job.company })
+      : t('toastUndoFailedExists')
   } else {
     ok = removeJobById(entry.job.id, entry.job)
-    title = ok ? '已撤销新增' : '撤销失败'
-    description = ok ? `「${entry.job.company}」已移除` : '记录已被修改，无法撤销'
+    title = ok ? t('toastUndoneAdd') : t('toastUndoFailed')
+    description = ok
+      ? t('toastUndoneAddDesc', { company: entry.job.company })
+      : t('toastUndoFailedModified')
   }
   const next = undoStack.topEntry.value
   if (!ok) {
@@ -203,12 +212,18 @@ onBeforeUnmount(() => {
   clearToastTimer()
 })
 
+/** 打开表单时记录触发元素，关闭后恢复焦点 */
+let formTrigger: HTMLElement | null = null
+const fabRef = ref<HTMLElement | null>(null)
+
 function openCreate() {
+  formTrigger = document.activeElement as HTMLElement | null
   editingJob.value = null
   formOpen.value = true
 }
 
 function openEdit(job: Job) {
+  formTrigger = document.activeElement as HTMLElement | null
   editingJob.value = job
   formOpen.value = true
 }
@@ -216,17 +231,26 @@ function openEdit(job: Job) {
 function closeForm() {
   formOpen.value = false
   editingJob.value = null
+  const trigger = formTrigger
+  formTrigger = null
+  nextTick(() => {
+    // 触发按钮可能已被重新创建（悬浮按钮在表单打开时移除），此时回退到悬浮按钮
+    if (trigger && document.contains(trigger)) {
+      trigger.focus()
+    } else if (fabRef.value) {
+      fabRef.value.focus()
+    }
+  })
 }
 
 function handleSave(payload: Parameters<typeof addJob>[0]) {
   if (editingJob.value) {
-    const company = editingJob.value.company
     updateJob(editingJob.value.id, payload)
-    showToast('edited', `「${company}」已更新`, '记录内容已保存')
+    showToast('edited', t('toastUpdated'), t('toastSaved'))
   } else {
     const job = addJob(payload)
     const entry = undoStack.push('add', job, jobs.value.length - 1)
-    showUndoToast('added', `已新增「${job.company}」`, '', entry)
+    showUndoToast('added', t('toastAdded', { company: job.company }), '', entry)
   }
   closeForm()
 }
@@ -237,20 +261,22 @@ function confirmDelete() {
   const removed = deleteJob(target.id)
   pendingDelete.value = null
   if (!removed) {
-    showToast('error', '删除失败', '记录不存在或已被移除')
+    showToast('error', t('toastDeleteFailed'), t('toastDeleteFailedDesc'))
     return
   }
   const entry = undoStack.push('delete', removed.job, removed.index)
-  showUndoToast('deleted', `已删除「${removed.job.company}」`, '', entry)
+  showUndoToast('deleted', t('toastDeleted', { company: removed.job.company }), '', entry)
 }
 
 /** Export is a non destructive action, so it never enters the undo stack. */
 function handleExportResult(result: ExportResult) {
   if (result.ok) {
-    showToast('exported', result.message, '文件已在本地生成')
+    showToast('exported', t('exportDone', { count: result.count }), t('exportLocalNote'))
     return
   }
-  showToast('error', '导出失败', result.message)
+  const description =
+    result.failure === 'empty' ? t('exportNoRecords') : t('exportWorkbookFailed')
+  showToast('error', t('exportFailed'), description)
 }
 </script>
 
@@ -261,15 +287,37 @@ function handleExportResult(result: ExportResult) {
         <span class="brand-mark">JT</span>
         <div>
           <h1>JobTrack</h1>
-          <p class="brand-sub">求职申请追踪</p>
+          <p class="brand-sub">{{ t('appSubtitle') }}</p>
         </div>
       </div>
-      <ExportButton
-        :filtered-jobs="filteredJobs"
-        :all-jobs="jobs"
-        @result="handleExportResult"
-      />
-      <button type="button" class="btn btn-primary" @click="openCreate">新增记录</button>
+      <div class="app-actions">
+        <button
+          type="button"
+          class="btn btn-lang"
+          :aria-label="locale === 'zh-CN' ? t('actionLanguageToEnglish') : t('actionLanguageToChinese')"
+          :title="locale === 'zh-CN' ? t('actionLanguageToEnglish') : t('actionLanguageToChinese')"
+          @click="toggleLocale"
+        >
+          <svg class="lang-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+            <circle cx="10" cy="10" r="7.4" fill="none" stroke="currentColor" stroke-width="1.5" />
+            <path
+              d="M2.6 10h14.8M10 2.6c2 2.2 3 4.7 3 7.4s-1 5.2-3 7.4c-2-2.2-3-4.7-3-7.4s1-5.2 3-7.4z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+            />
+          </svg>
+          <span>{{ t('languageName') }}</span>
+        </button>
+        <ExportButton
+          :filtered-jobs="filteredJobs"
+          :all-jobs="jobs"
+          @result="handleExportResult"
+        />
+        <button type="button" class="btn btn-primary" @click="openCreate">
+          {{ t('actionAddRecord') }}
+        </button>
+      </div>
     </header>
 
     <main class="app-main">
@@ -281,7 +329,7 @@ function handleExportResult(result: ExportResult) {
       <SearchFilter
         :filters="filters"
         :has-active-filters="hasActiveFilters"
-        :date-range-error="dateRangeError"
+        :date-range-invalid="dateRangeInvalid"
         :view-mode="viewMode"
         :is-auto="isAuto"
         @update:filters="patchFilters"
@@ -315,13 +363,22 @@ function handleExportResult(result: ExportResult) {
       @click.self="pendingDelete = null"
     >
       <div class="dialog dialog-confirm">
-        <h2 class="dialog-title">确认删除</h2>
+        <h2 class="dialog-title">{{ t('confirmDeleteTitle') }}</h2>
         <p class="confirm-text">
-          确定要删除“{{ pendingDelete.company }} / {{ pendingDelete.position }}”这条记录吗？删除后可在提示条中撤销。
+          {{
+            t('confirmDeleteText', {
+              company: pendingDelete.company,
+              position: pendingDelete.position,
+            })
+          }}
         </p>
         <div class="dialog-actions">
-          <button type="button" class="btn btn-ghost" @click="pendingDelete = null">取消</button>
-          <button type="button" class="btn btn-danger" @click="confirmDelete">确认删除</button>
+          <button type="button" class="btn btn-ghost" @click="pendingDelete = null">
+            {{ t('confirmCancel') }}
+          </button>
+          <button type="button" class="btn btn-danger" @click="confirmDelete">
+            {{ t('confirmDeleteAction') }}
+          </button>
         </div>
       </div>
     </div>
@@ -346,5 +403,19 @@ function handleExportResult(result: ExportResult) {
       @undo="handleUndo"
       @close="hideToast"
     />
+
+    <button
+      v-if="!formOpen"
+      ref="fabRef"
+      type="button"
+      class="fab-add"
+      :aria-label="t('actionAddRecord')"
+      @click="openCreate"
+    >
+      <svg class="fab-add-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+        <path d="M10 4.4v11.2M4.4 10h11.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+      <span>{{ t('actionAddRecord') }}</span>
+    </button>
   </div>
 </template>

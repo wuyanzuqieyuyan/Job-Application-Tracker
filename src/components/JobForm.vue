@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { nextTick, onMounted, reactive, ref, watch } from 'vue'
 import type { Job } from '../types'
-import { STATUS_LABELS, STATUS_ORDER } from '../types'
+import { STATUS_ORDER } from '../types'
 import type { JobFormInput } from '../composables/useJobs'
+import { useI18n } from '../composables/useI18n'
 
 const props = defineProps<{ editing: Job | null }>()
 
@@ -10,6 +11,8 @@ const emit = defineEmits<{
   (e: 'save', payload: JobFormInput): void
   (e: 'cancel'): void
 }>()
+
+const { t, statusLabel } = useI18n()
 
 type FormState = JobFormInput
 type FormErrors = Partial<Record<keyof FormState, string>>
@@ -24,6 +27,12 @@ const blank = (): FormState => ({
 
 const form = reactive<FormState>(blank())
 const errors = ref<FormErrors>({})
+const companyInput = ref<HTMLInputElement | null>(null)
+
+onMounted(async () => {
+  await nextTick()
+  companyInput.value?.focus()
+})
 
 watch(
   () => props.editing,
@@ -51,27 +60,27 @@ function validate(): boolean {
   const position = form.position.trim()
 
   if (company === '') {
-    next.company = '请输入公司名称'
+    next.company = t('errorCompanyRequired')
   } else if (company.length > 50) {
-    next.company = '公司名称不能超过 50 个字符'
+    next.company = t('errorCompanyTooLong', { max: 50 })
   }
 
   if (position === '') {
-    next.position = '请输入岗位名称'
+    next.position = t('errorPositionRequired')
   } else if (position.length > 50) {
-    next.position = '岗位名称不能超过 50 个字符'
+    next.position = t('errorPositionTooLong', { max: 50 })
   }
 
   if (form.appliedDate === '') {
-    next.appliedDate = '请选择申请日期'
+    next.appliedDate = t('errorDateRequired')
   } else if (Number.isNaN(Date.parse(form.appliedDate))) {
-    next.appliedDate = '日期格式无效'
+    next.appliedDate = t('errorDateInvalid')
   } else if (form.appliedDate > today()) {
-    next.appliedDate = '申请日期不能晚于今天'
+    next.appliedDate = t('errorDateFuture')
   }
 
   if (form.notes.length > 200) {
-    next.notes = '备注不能超过 200 个字符'
+    next.notes = t('errorNotesTooLong', { max: 200 })
   }
 
   errors.value = next
@@ -96,12 +105,13 @@ function clearError(field: keyof FormErrors) {
 
 <template>
   <form class="job-form" novalidate @submit.prevent="onSubmit">
-    <h2 class="dialog-title">{{ editing ? '编辑申请记录' : '新增申请记录' }}</h2>
+    <h2 class="dialog-title">{{ editing ? t('formEditTitle') : t('formAddTitle') }}</h2>
 
     <div class="field">
-      <label for="company">公司名称 <span class="req">*</span></label>
+      <label for="company">{{ t('formCompany') }} <span class="req">*</span></label>
       <input
         id="company"
+        ref="companyInput"
         v-model="form.company"
         type="text"
         :class="{ invalid: errors.company }"
@@ -112,7 +122,7 @@ function clearError(field: keyof FormErrors) {
     </div>
 
     <div class="field">
-      <label for="position">岗位名称 <span class="req">*</span></label>
+      <label for="position">{{ t('formPosition') }} <span class="req">*</span></label>
       <input
         id="position"
         v-model="form.position"
@@ -126,7 +136,7 @@ function clearError(field: keyof FormErrors) {
 
     <div class="field-row">
       <div class="field">
-        <label for="appliedDate">申请日期 <span class="req">*</span></label>
+        <label for="appliedDate">{{ t('formDate') }} <span class="req">*</span></label>
         <input
           id="appliedDate"
           v-model="form.appliedDate"
@@ -139,17 +149,17 @@ function clearError(field: keyof FormErrors) {
       </div>
 
       <div class="field">
-        <label for="form-status">申请状态</label>
+        <label for="form-status">{{ t('formStatus') }}</label>
         <select id="form-status" v-model="form.status">
           <option v-for="status in STATUS_ORDER" :key="status" :value="status">
-            {{ STATUS_LABELS[status] }}
+            {{ statusLabel(status) }}
           </option>
         </select>
       </div>
     </div>
 
     <div class="field">
-      <label for="notes">备注</label>
+      <label for="notes">{{ t('formNotes') }}</label>
       <textarea
         id="notes"
         v-model="form.notes"
@@ -162,8 +172,12 @@ function clearError(field: keyof FormErrors) {
     </div>
 
     <div class="dialog-actions">
-      <button type="button" class="btn btn-ghost" @click="emit('cancel')">取消</button>
-      <button type="submit" class="btn btn-primary">{{ editing ? '保存修改' : '新增记录' }}</button>
+      <button type="button" class="btn btn-ghost" @click="emit('cancel')">
+        {{ t('formCancel') }}
+      </button>
+      <button type="submit" class="btn btn-primary">
+        {{ editing ? t('formSave') : t('formSubmit') }}
+      </button>
     </div>
   </form>
 </template>

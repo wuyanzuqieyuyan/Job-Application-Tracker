@@ -100,10 +100,6 @@ const dateRangeInvalid = computed(() => {
   return dateFrom !== '' && dateTo !== '' && dateFrom > dateTo
 })
 
-const dateRangeError = computed(() =>
-  dateRangeInvalid.value ? '起始日期不能晚于结束日期，已暂时忽略日期范围' : '',
-)
-
 const hasActiveFilters = computed(() => {
   const f = filters.value
   return (
@@ -282,7 +278,7 @@ export function useJobs() {
     filteredJobs,
     filters,
     hasActiveFilters,
-    dateRangeError,
+    dateRangeInvalid,
     patchFilters,
     clearFilters,
     stats,

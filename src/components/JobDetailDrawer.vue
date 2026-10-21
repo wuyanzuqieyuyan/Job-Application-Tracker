@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { Job } from '../types'
-import { STATUS_LABELS } from '../types'
+import { useI18n } from '../composables/useI18n'
 
 const props = defineProps<{
   open: boolean
@@ -13,6 +13,8 @@ const emit = defineEmits<{
   (e: 'edit', job: Job): void
   (e: 'remove', job: Job): void
 }>()
+
+const { t, statusLabel } = useI18n()
 
 const panel = ref<HTMLElement | null>(null)
 const closeButton = ref<HTMLButtonElement | null>(null)
@@ -84,15 +86,15 @@ onBeforeUnmount(() => {
         class="drawer"
         role="dialog"
         aria-modal="true"
-        :aria-label="job ? `${job.company} ${job.position} 职位详情` : '职位详情'"
+        :aria-label="job ? t('drawerLabel', { company: job.company, position: job.position }) : t('drawerTitle')"
       >
         <header class="drawer-header">
-          <h2 class="drawer-heading">职位详情</h2>
+          <h2 class="drawer-heading">{{ t('drawerTitle') }}</h2>
           <button
             ref="closeButton"
             type="button"
             class="drawer-close"
-            aria-label="关闭详情"
+            :aria-label="t('drawerClose')"
             @click="emit('close')"
           >
             <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
@@ -114,31 +116,35 @@ onBeforeUnmount(() => {
 
             <dl class="drawer-meta">
               <div class="drawer-meta-row">
-                <dt>申请日期</dt>
+                <dt>{{ t('drawerDate') }}</dt>
                 <dd>{{ job.appliedDate }}</dd>
               </div>
               <div class="drawer-meta-row">
-                <dt>当前状态</dt>
+                <dt>{{ t('drawerStatus') }}</dt>
                 <dd>
                   <span class="badge" :class="`badge-${job.status}`">
-                    {{ STATUS_LABELS[job.status] }}
+                    {{ statusLabel(job.status) }}
                   </span>
                 </dd>
               </div>
             </dl>
 
             <section class="drawer-section">
-              <h4 class="drawer-section-title">备注</h4>
-              <p class="drawer-notes">{{ job.notes || '暂无备注' }}</p>
+              <h4 class="drawer-section-title">{{ t('drawerNotes') }}</h4>
+              <p class="drawer-notes">{{ job.notes || t('drawerNoNotes') }}</p>
             </section>
           </template>
 
-          <p v-else class="drawer-missing">该记录已被删除。</p>
+          <p v-else class="drawer-missing">{{ t('drawerMissing') }}</p>
         </div>
 
         <footer v-if="job" class="drawer-footer">
-          <button type="button" class="btn btn-ghost" @click="emit('edit', job)">编辑</button>
-          <button type="button" class="btn btn-danger" @click="emit('remove', job)">删除</button>
+          <button type="button" class="btn btn-ghost" @click="emit('edit', job)">
+            {{ t('drawerEdit') }}
+          </button>
+          <button type="button" class="btn btn-danger" @click="emit('remove', job)">
+            {{ t('drawerDelete') }}
+          </button>
         </footer>
       </aside>
     </div>

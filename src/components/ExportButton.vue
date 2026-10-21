@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { Job } from '../types'
-import type { ExportResult, ExportScope } from '../utils/exportJobs'
+import type { ExportLabels, ExportResult, ExportScope } from '../utils/exportJobs'
+import { useI18n } from '../composables/useI18n'
 
 const props = defineProps<{
   filteredJobs: Job[]
@@ -12,12 +13,27 @@ const emit = defineEmits<{
   (e: 'result', result: ExportResult): void
 }>()
 
+const { t, statusLabel } = useI18n()
+
 const open = ref(false)
 const busy = ref(false)
 const root = ref<HTMLElement | null>(null)
 
 const hasRecords = computed(() => props.allJobs.length > 0)
 const hasFiltered = computed(() => props.filteredJobs.length > 0)
+
+/** 导出的列名与状态文案跟随当前界面语言 */
+const exportLabels = computed<ExportLabels>(() => ({
+  headers: {
+    id: t('exportHeaderId'),
+    company: t('exportHeaderCompany'),
+    position: t('exportHeaderPosition'),
+    appliedDate: t('exportHeaderDate'),
+    status: t('exportHeaderStatus'),
+    notes: t('exportHeaderNotes'),
+  },
+  statusLabel,
+}))
 
 function toggleMenu() {
   if (busy.value || !hasRecords.value) return
@@ -33,17 +49,16 @@ async function choose(scope: ExportScope) {
   closeMenu()
   const jobs = scope === 'filtered' ? props.filteredJobs : props.allJobs
   if (jobs.length === 0) {
-    emit('result', { ok: false, message: '没有可导出的记录', count: 0 })
+    emit('result', { ok: false, count: 0, failure: 'empty' })
     return
   }
   busy.value = true
   try {
     // the Excel writer is only loaded when an export is actually requested
     const { exportJobsToXlsx } = await import('../utils/exportJobs')
-    const result = await exportJobsToXlsx(jobs)
-    emit('result', result)
+    emit('result', await exportJobsToXlsx(jobs, exportLabels.value))
   } catch {
-    emit('result', { ok: false, message: '导出失败：模块加载出错', count: 0 })
+    emit('result', { ok: false, count: 0, failure: 'workbook' })
   } finally {
     busy.value = false
   }
@@ -73,7 +88,7 @@ onBeforeUnmount(() => {
   <div ref="root" class="export">
     <button
       type="button"
-      class="btn btn-ghost export-trigger"
+      class="btn btn-export export-trigger"
       :disabled="!hasRecords || busy"
       aria-haspopup="menu"
       :aria-expanded="open"
@@ -96,10 +111,10 @@ onBeforeUnmount(() => {
           stroke-linecap="round"
         />
       </svg>
-      <span>{{ busy ? '导出中…' : '导出 Excel' }}</span>
+      <span>{{ busy ? t('actionExporting') : t('actionExport') }}</span>
     </button>
 
-    <div v-if="open" class="export-menu" role="menu" aria-label="导出范围">
+    <div v-if="open" class="export-menu" role="menu" :aria-label="t('exportMenuLabel')">
       <button
         type="button"
         class="export-menu-item"
@@ -107,8 +122,8 @@ onBeforeUnmount(() => {
         :disabled="!hasFiltered"
         @click="choose('filtered')"
       >
-        <span class="export-menu-label">导出当前筛选结果</span>
-        <span class="export-menu-count">{{ filteredJobs.length }} 条</span>
+        <span class="export-menu-label">{{ t('exportFiltered') }}</span>
+        <span class="export-menu-count">{{ t('exportCount', { count: filteredJobs.length }) }}</span>
       </button>
       <button
         type="button"
@@ -117,8 +132,8 @@ onBeforeUnmount(() => {
         :disabled="!hasRecords"
         @click="choose('all')"
       >
-        <span class="export-menu-label">导出全部记录</span>
-        <span class="export-menu-count">{{ allJobs.length }} 条</span>
+        <span class="export-menu-label">{{ t('exportAll') }}</span>
+        <span class="export-menu-count">{{ t('exportCount', { count: allJobs.length }) }}</span>
       </button>
     </div>
   </div>

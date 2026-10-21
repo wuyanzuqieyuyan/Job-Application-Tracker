@@ -5,6 +5,7 @@ import { PieChart } from 'echarts/charts'
 import { LegendComponent, TitleComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import type { JobStatus } from '../types'
+import { useI18n } from '../composables/useI18n'
 
 echarts.use([PieChart, TooltipComponent, LegendComponent, TitleComponent, CanvasRenderer])
 
@@ -20,6 +21,8 @@ const props = defineProps<{
   total: number
 }>()
 
+const { t } = useI18n()
+
 const container = ref<HTMLDivElement | null>(null)
 let chart: echarts.ECharts | null = null
 let observer: ResizeObserver | null = null
@@ -30,14 +33,14 @@ const hasRecords = computed(() => props.total > 0)
 const summary = computed(() =>
   props.data
     .filter((slice) => slice.count > 0)
-    .map((slice) => `${slice.label} ${slice.count} 条`)
-    .join('，'),
+    .map((slice) => t('chartSummaryItem', { label: slice.label, count: slice.count }))
+    .join(', '),
 )
 
 const option = computed<echarts.EChartsCoreOption>(() => ({
   title: {
     text: String(props.total),
-    subtext: '总记录',
+    subtext: t('chartCenterLabel'),
     left: 'center',
     top: '32%',
     textStyle: { fontSize: 26, fontWeight: 700, color: '#0f172a' },
@@ -47,7 +50,7 @@ const option = computed<echarts.EChartsCoreOption>(() => ({
     trigger: 'item',
     formatter: (params: unknown) => {
       const p = params as { name: string; value: number; percent: number }
-      return `${p.name}<br/>${p.value} 条 · ${p.percent}%`
+      return `${p.name}<br/>${p.value} · ${p.percent}%`
     },
   },
   legend: {
@@ -112,10 +115,16 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="chart-card" aria-label="求职状态分布">
-    <h2 class="chart-title">求职状态分布</h2>
-    <p class="sr-only">共 {{ total }} 条记录：{{ summary }}</p>
-    <p v-if="!hasRecords" class="chart-empty">还没有记录，新增一条后即可查看状态分布。</p>
-    <div v-show="hasRecords" ref="container" class="chart-canvas" role="img" :aria-label="`求职状态分布环形图，共 ${total} 条记录：${summary}`"></div>
+  <section class="chart-card" :aria-label="t('chartTitle')">
+    <h2 class="chart-title">{{ t('chartTitle') }}</h2>
+    <p class="sr-only">{{ t('chartSummary', { total, detail: summary }) }}</p>
+    <p v-if="!hasRecords" class="chart-empty">{{ t('chartEmpty') }}</p>
+    <div
+      v-show="hasRecords"
+      ref="container"
+      class="chart-canvas"
+      role="img"
+      :aria-label="t('chartCanvasLabel', { total, detail: summary })"
+    ></div>
   </section>
 </template>
