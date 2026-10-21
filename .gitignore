@@ -6,3 +6,6 @@ dist
 # local test scripts and screenshots (temporary, not part of the app)
 _*.mjs
 shot-*.png
+
+# stale local backups
+*.bak
