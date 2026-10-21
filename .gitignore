@@ -2,3 +2,7 @@ node_modules
 dist
 *.local
 .DS_Store
+
+# local test scripts and screenshots (temporary, not part of the app)
+_*.mjs
+shot-*.png

@@ -17,3 +17,28 @@ export const STATUS_LABELS: Record<JobStatus, string> = {
   offer: '录取',
   rejected: '已拒绝',
 }
+
+/** Sort order for the record list, by application date. */
+export type SortOrder = 'date-desc' | 'date-asc'
+
+export const SORT_LABELS: Record<SortOrder, string> = {
+  'date-desc': '投递日期（新 → 旧）',
+  'date-asc': '投递日期（旧 → 新）',
+}
+
+/** Composable query state. Never written back to storage. */
+export interface JobFilters {
+  keyword: string
+  status: JobStatus | 'all'
+  dateFrom: string
+  dateTo: string
+  sortOrder: SortOrder
+}
+
+export const DEFAULT_FILTERS: JobFilters = {
+  keyword: '',
+  status: 'all',
+  dateFrom: '',
+  dateTo: '',
+  sortOrder: 'date-desc',
+}

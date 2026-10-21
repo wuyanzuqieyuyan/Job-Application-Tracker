@@ -1,5 +1,6 @@
 import { computed, reactive, ref, watch } from 'vue'
-import type { Job, JobStatus } from '../types'
+import type { Job, JobFilters, JobStatus } from '../types'
+import { DEFAULT_FILTERS } from '../types'
 
 const STORAGE_KEY = 'jobtrack.jobs.v1'
 
@@ -91,16 +92,73 @@ watch(
   { deep: true },
 )
 
-const searchTerm = ref('')
-const statusFilter = ref<JobStatus | 'all'>('all')
+const filters = ref<JobFilters>({ ...DEFAULT_FILTERS })
 
-const filteredJobs = computed(() => {
-  const term = searchTerm.value.trim().toLowerCase()
-  return jobs.value.filter((job) => {
-    const matchesStatus = statusFilter.value === 'all' || job.status === statusFilter.value
-    const matchesCompany = term === '' || job.company.toLowerCase().includes(term)
-    return matchesStatus && matchesCompany
+/** True when the chosen date range is contradictory (start after end). */
+const dateRangeInvalid = computed(() => {
+  const { dateFrom, dateTo } = filters.value
+  return dateFrom !== '' && dateTo !== '' && dateFrom > dateTo
+})
+
+const dateRangeError = computed(() =>
+  dateRangeInvalid.value ? '起始日期不能晚于结束日期，已暂时忽略日期范围' : '',
+)
+
+const hasActiveFilters = computed(() => {
+  const f = filters.value
+  return (
+    f.keyword.trim() !== '' ||
+    f.status !== 'all' ||
+    f.dateFrom !== '' ||
+    f.dateTo !== ''
+  )
+})
+
+/**
+ * Query pipeline: keyword -> status -> date range -> sort.
+ * Always works on a copy; the reactive source array is never mutated.
+ */
+const filteredJobs = computed<Job[]>(() => {
+  const { keyword, status, dateFrom, dateTo, sortOrder } = filters.value
+  const term = keyword.trim().toLowerCase()
+  const hasFrom = dateFrom !== ''
+  const hasTo = dateTo !== ''
+  const ignoreRange = dateRangeInvalid.value
+  const from = hasFrom ? Date.parse(dateFrom) : Number.NaN
+  const to = hasTo ? Date.parse(dateTo) : Number.NaN
+
+  const matched = jobs.value.filter((job) => {
+    if (term !== '') {
+      const hitCompany = job.company.toLowerCase().includes(term)
+      const hitPosition = job.position.toLowerCase().includes(term)
+      if (!hitCompany && !hitPosition) return false
+    }
+    if (status !== 'all' && job.status !== status) return false
+    if (!ignoreRange && (hasFrom || hasTo)) {
+      const time = Date.parse(job.appliedDate)
+      // records with an unreadable date cannot be placed in a range
+      if (Number.isNaN(time)) return false
+      if (hasFrom && time < from) return false
+      if (hasTo && time > to) return false
+    }
+    return true
   })
+
+  const direction = sortOrder === 'date-asc' ? 1 : -1
+  return matched
+    .map((job, index) => ({ job, index }))
+    .sort((a, b) => {
+      const timeA = Date.parse(a.job.appliedDate)
+      const timeB = Date.parse(b.job.appliedDate)
+      const validA = !Number.isNaN(timeA)
+      const validB = !Number.isNaN(timeB)
+      // unreadable dates are always pushed to the end
+      if (validA !== validB) return validA ? -1 : 1
+      if (validA && timeA !== timeB) return (timeA - timeB) * direction
+      // stable secondary rule: keep the original insertion order
+      return a.index - b.index
+    })
+    .map((entry) => entry.job)
 })
 
 const stats = computed(() => {
@@ -195,15 +253,27 @@ export function useJobs() {
 
   function reset() {
     jobs.value = []
-    searchTerm.value = ''
-    statusFilter.value = 'all'
+    clearFilters()
+  }
+
+  /** Applies a partial filter change. */
+  function patchFilters(patch: Partial<JobFilters>) {
+    filters.value = { ...filters.value, ...patch }
+  }
+
+  /** Restores the default filters and the default sort order. */
+  function clearFilters() {
+    filters.value = { ...DEFAULT_FILTERS }
   }
 
   return {
     jobs,
     filteredJobs,
-    searchTerm,
-    statusFilter,
+    filters,
+    hasActiveFilters,
+    dateRangeError,
+    patchFilters,
+    clearFilters,
     stats,
     addJob,
     updateJob,

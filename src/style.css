@@ -175,6 +175,63 @@ textarea {
   max-width: 200px;
 }
 
+.field-range {
+  flex: 1 1 260px;
+  min-width: 220px;
+}
+
+.field-range-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.field-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.field-range-inputs input {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.field-range-sep {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.field-sort {
+  flex: 0 1 190px;
+  min-width: 160px;
+}
+
+.field-actions {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.field-actions-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.field-error {
+  flex: 1 0 100%;
+  margin: 0;
+  color: var(--danger);
+  font-size: 12.5px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .field-view {
   flex: 0 0 auto;
   min-width: 0;
@@ -437,6 +494,10 @@ textarea {
 .empty-desc {
   margin: 0;
   font-size: 14px;
+}
+
+.empty-action {
+  margin-top: 14px;
 }
 
 .overlay {
@@ -817,6 +878,18 @@ textarea {
 
   .field-status {
     max-width: none;
+  }
+
+  .field-range,
+  .field-sort {
+    /* in the stacked layout the flex-basis would become a height */
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: none;
+  }
+
+  .field-actions {
+    width: 100%;
   }
 
   .field-row {

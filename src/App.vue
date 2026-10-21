@@ -16,8 +16,11 @@ import type { Job } from './types'
 const {
   jobs,
   filteredJobs,
-  searchTerm,
-  statusFilter,
+  filters,
+  hasActiveFilters,
+  dateRangeError,
+  patchFilters,
+  clearFilters,
   stats,
   addJob,
   updateJob,
@@ -53,9 +56,7 @@ let toastTimer: ReturnType<typeof setTimeout> | undefined
 
 const TOAST_EXIT_MS = 180
 
-const isFiltering = computed(
-  () => searchTerm.value.trim() !== '' || statusFilter.value !== 'all',
-)
+const isFiltering = computed(() => hasActiveFilters.value)
 
 const undoRemainingMs = computed(() => undoStack.remainingMs.value)
 /** Share of the undo window left, derived from the undo stack's own clock. */
@@ -217,12 +218,13 @@ function confirmDelete() {
       <StatsBar :stats="stats" />
 
       <SearchFilter
-        :search-term="searchTerm"
-        :status-filter="statusFilter"
+        :filters="filters"
+        :has-active-filters="hasActiveFilters"
+        :date-range-error="dateRangeError"
         :view-mode="viewMode"
         :is-auto="isAuto"
-        @update:search-term="searchTerm = $event"
-        @update:status-filter="statusFilter = $event"
+        @update:filters="patchFilters"
+        @clear-filters="clearFilters"
         @update:view-preference="handleViewPreference"
       />
 
@@ -233,6 +235,7 @@ function confirmDelete() {
         :view-mode="viewMode"
         @edit="openEdit"
         @remove="pendingDelete = $event"
+        @clear-filters="clearFilters"
       />
     </main>
 

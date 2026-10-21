@@ -13,6 +13,7 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'edit', job: Job): void
   (e: 'remove', job: Job): void
+  (e: 'clearFilters'): void
 }>()
 </script>
 
@@ -95,7 +96,10 @@ const emit = defineEmits<{
       </template>
       <template v-else-if="isFiltering">
         <p class="empty-title">没有匹配的记录</p>
-        <p class="empty-desc">尝试更换搜索关键字或状态筛选条件。</p>
+        <p class="empty-desc">尝试调整搜索关键字、状态或日期范围。</p>
+        <button type="button" class="btn btn-sm btn-ghost empty-action" @click="emit('clearFilters')">
+          清除筛选条件
+        </button>
       </template>
       <template v-else>
         <p class="empty-title">暂无记录</p>
