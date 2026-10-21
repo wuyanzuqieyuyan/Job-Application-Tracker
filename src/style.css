@@ -625,6 +625,188 @@ textarea {
   margin-top: 14px;
 }
 
+.job-row {
+  cursor: pointer;
+}
+
+.job-row:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  /* below the toast (60) so notifications stay visible, above the page content */
+  z-index: 45;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.drawer {
+  width: min(440px, 100%);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  box-shadow: -12px 0 32px rgba(15, 23, 42, 0.18);
+  animation: drawer-in 200ms ease-out;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.drawer-heading {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.drawer-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.drawer-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.drawer-close:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.drawer-close svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+.drawer-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 18px 16px;
+  min-height: 0;
+}
+
+.drawer-company {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  color: #0f172a;
+  overflow-wrap: anywhere;
+}
+
+.drawer-position {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.drawer-meta {
+  margin: 18px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.drawer-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.drawer-meta-row dt {
+  flex: 0 0 auto;
+  width: 72px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.drawer-meta-row dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.drawer-section {
+  margin-top: 22px;
+}
+
+.drawer-section-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.drawer-notes {
+  margin: 0;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.drawer-missing {
+  margin: 40px 0;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.drawer-footer {
+  display: flex;
+  gap: 10px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.drawer-footer .btn {
+  flex: 1 1 0;
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer {
+    animation: none;
+  }
+}
+
 .overlay {
   position: fixed;
   inset: 0;
@@ -1078,5 +1260,9 @@ textarea {
   .toast-close {
     width: 36px;
     height: 36px;
+  }
+
+  .drawer {
+    width: 100%;
   }
 }

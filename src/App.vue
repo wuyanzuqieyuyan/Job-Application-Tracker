@@ -9,6 +9,7 @@ import type { ToastVariant } from './components/AppToast.vue'
 import ExportButton from './components/ExportButton.vue'
 import type { ExportResult } from './utils/exportJobs'
 import type { StatusSlice } from './components/StatusChart.vue'
+import JobDetailDrawer from './components/JobDetailDrawer.vue'
 import { STATUS_COLORS, STATUS_LABELS, STATUS_ORDER } from './types'
 
 // the chart library is only fetched when the dashboard is rendered
@@ -52,6 +53,31 @@ const undoStack = useUndoStack()
 const formOpen = ref(false)
 const editingJob = ref<Job | null>(null)
 const pendingDelete = ref<Job | null>(null)
+
+/** Detail drawer selection, identified by the stable record id. */
+const detailJobId = ref<string | null>(null)
+const detailJob = computed(() => jobs.value.find((job) => job.id === detailJobId.value) ?? null)
+const detailOpen = computed(() => detailJobId.value !== null)
+
+function openDetail(job: Job) {
+  detailJobId.value = job.id
+}
+
+function closeDetail() {
+  detailJobId.value = null
+}
+
+/** Editing from the drawer reuses the existing edit flow. */
+function handleDetailEdit(job: Job) {
+  closeDetail()
+  openEdit(job)
+}
+
+/** Deleting from the drawer reuses the existing confirmation + undo flow. */
+function handleDetailRemove(job: Job) {
+  closeDetail()
+  pendingDelete.value = job
+}
 
 const toast = ref<{
   variant: ToastVariant
@@ -270,6 +296,7 @@ function handleExportResult(result: ExportResult) {
         :view-mode="viewMode"
         @edit="openEdit"
         @remove="pendingDelete = $event"
+        @view="openDetail"
         @clear-filters="clearFilters"
       />
     </main>
@@ -298,6 +325,14 @@ function handleExportResult(result: ExportResult) {
         </div>
       </div>
     </div>
+
+    <JobDetailDrawer
+      :open="detailOpen"
+      :job="detailJob"
+      @close="closeDetail"
+      @edit="handleDetailEdit"
+      @remove="handleDetailRemove"
+    />
 
     <AppToast
       v-if="toast"

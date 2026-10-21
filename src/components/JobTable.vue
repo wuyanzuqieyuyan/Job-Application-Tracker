@@ -13,6 +13,7 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'edit', job: Job): void
   (e: 'remove', job: Job): void
+  (e: 'view', job: Job): void
   (e: 'clearFilters'): void
 }>()
 </script>
@@ -32,9 +33,17 @@ const emit = defineEmits<{
           </tr>
         </thead>
         <tbody>
-          <tr v-for="job in jobs" :key="job.id">
+          <tr
+            v-for="job in jobs"
+            :key="job.id"
+            class="job-row"
+            tabindex="0"
+            @click="emit('view', job)"
+            @keydown.enter.prevent="emit('view', job)"
+            @keydown.space.prevent="emit('view', job)"
+          >
             <td class="cell-company">{{ job.company }}</td>
-            <td class="cell-position">{{ job.position }}</td>
+            <td>{{ job.position }}</td>
             <td>{{ job.appliedDate }}</td>
             <td>
               <span class="badge" :class="`badge-${job.status}`">
@@ -44,10 +53,18 @@ const emit = defineEmits<{
             <td class="cell-notes">{{ job.notes || '—' }}</td>
             <td class="col-actions">
               <div class="col-actions-list">
-                <button type="button" class="btn btn-sm btn-ghost" @click="emit('edit', job)">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-ghost"
+                  @click.stop="emit('edit', job)"
+                >
                   编辑
                 </button>
-                <button type="button" class="btn btn-sm btn-danger" @click="emit('remove', job)">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-danger"
+                  @click.stop="emit('remove', job)"
+                >
                   删除
                 </button>
               </div>
@@ -78,6 +95,9 @@ const emit = defineEmits<{
             </div>
           </dl>
           <div class="card-actions">
+            <button type="button" class="btn btn-sm btn-ghost" @click="emit('view', job)">
+              详情
+            </button>
             <button type="button" class="btn btn-sm btn-ghost" @click="emit('edit', job)">
               编辑
             </button>
