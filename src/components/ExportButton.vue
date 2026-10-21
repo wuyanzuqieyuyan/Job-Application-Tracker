@@ -90,6 +90,7 @@ onBeforeUnmount(() => {
       type="button"
       class="btn btn-export export-trigger"
       :disabled="!hasRecords || busy"
+      :aria-label="t('actionExport')"
       aria-haspopup="menu"
       :aria-expanded="open"
       @click="toggleMenu"

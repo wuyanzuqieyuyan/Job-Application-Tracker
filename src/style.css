@@ -203,11 +203,52 @@ body {
   min-height: 300px;
 }
 
+.chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
 .chart-title {
-  margin: 0 0 6px;
+  margin: 0;
   font-size: 14px;
   font-weight: 600;
   color: var(--text);
+}
+
+.chart-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.chart-toggle:hover {
+  color: var(--text);
+  background: #f1f5f9;
+}
+
+.chart-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.chart-toggle-icon {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
 }
 
 .chart-canvas {
@@ -319,20 +360,52 @@ textarea {
   resize: vertical;
 }
 
+/* 工具栏：左侧筛选组（内部自然换行）+ 右侧显示方式组 */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.toolbar-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* 排序与清除筛选成对出现，不会在换行时被拆散 */
+.filter-pair {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex: 0 0 auto;
+}
+
+.filter-pair .field {
+  flex: 0 0 auto;
+}
+
 /* 搜索框需要足够宽度，桌面端才能完整显示 placeholder 与输入内容 */
 .field-search {
   flex: 1 1 240px;
   min-width: 210px;
+  max-width: 240px;
 }
 
 .field-status {
-  max-width: 200px;
+  flex: 0 1 165px;
+  min-width: 150px;
+  max-width: 165px;
 }
 
 .field-range {
-  flex: 1 1 260px;
-  min-width: 220px;
-  max-width: 300px;
+  flex: 0 1 255px;
+  min-width: 230px;
+  max-width: 255px;
 }
 
 .field-range-label {
@@ -360,8 +433,9 @@ textarea {
 }
 
 .field-sort {
-  flex: 0 1 190px;
-  min-width: 160px;
+  flex: 0 0 150px;
+  min-width: 140px;
+  max-width: 155px;
 }
 
 .field-actions {
@@ -614,28 +688,35 @@ textarea {
   background: #f8fafc;
 }
 
+/* 列宽：百分比列随表格宽度缩放，操作列固定 px；总和不小于 100% 时浏览器按比例压缩 */
 .job-table thead th:nth-child(1) {
-  width: 18%;
+  width: 24%;
 }
 
 .job-table thead th:nth-child(2) {
-  width: 15%;
+  width: 18%;
 }
 
 .job-table thead th:nth-child(3) {
-  width: 12%;
+  width: 11%;
 }
 
 .job-table thead th:nth-child(4) {
-  width: 9%;
+  width: 12%;
 }
 
 .job-table thead th:nth-child(5) {
-  width: 26%;
+  width: 22%;
 }
 
 .job-table thead th.col-actions {
   width: 130px;
+}
+
+/* 状态列居中，与表头保持一致，避免徽标贴在宽单元格的一侧 */
+.job-table thead th:nth-child(4),
+.job-table tbody td:nth-child(4) {
+  text-align: center;
 }
 
 .job-table tbody tr:last-child td {
@@ -1324,9 +1405,32 @@ textarea {
 }
 
 .card-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  margin-top: auto;
+}
+
+/* 卡片操作区：等分整行，触控区域不小于 44px */
+.card-actions .btn {
+  min-height: 44px;
+  min-width: 0;
+  padding: 0 6px;
+  justify-content: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 详情是卡片的主要动作，编辑/删除为次级动作 */
+.card-actions .btn:nth-child(1) {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #dbeafe;
+}
+
+.card-actions .btn:nth-child(1):hover {
+  background: #dbeafe;
+  border-color: #bfdbfe;
 }
 
 .card-actions .btn {
@@ -1350,31 +1454,114 @@ textarea {
     padding: 16px 14px 96px;
   }
 
+  .app-header {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .brand-sub {
+    display: none;
+  }
+
+  .brand h1 {
+    font-size: 19px;
+  }
+
+  /* 手机端头部按钮改为紧凑形态，保持单行且不互相遮挡 */
+  .app-actions {
+    gap: 8px;
+  }
+
+  .btn-lang,
+  .btn-export {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .btn-lang span,
+  .btn-export span {
+    display: none;
+  }
+
+  .btn-export {
+    gap: 0;
+  }
+
+  .app-actions .btn-primary {
+    height: 40px;
+    padding: 0 14px;
+  }
+
   .stats {
     grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 8px 10px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+  }
+
+  .stat-label {
+    font-size: 12px;
   }
 
   .dashboard .stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .chart-card {
+    padding: 10px;
+    min-height: 0;
+  }
+
+  .chart-title {
+    margin-bottom: 2px;
+  }
+
   .chart-canvas {
-    height: 220px;
+    height: 168px;
   }
 
   .toolbar {
     flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
   }
 
-  .field-status {
-    max-width: none;
+  .toolbar-filters {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 10px;
   }
 
+  .filter-pair {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 10px;
+  }
+
+  /* 窄屏收紧标签与控件之间的距离 */
+  .toolbar-filters .field,
+  .filter-pair .field {
+    gap: 4px;
+  }
+
+  /* 纵向排列时 flex-basis 会变成高度，这里统一改为内容高度 */
+  .field-search,
+  .field-status,
   .field-range,
   .field-sort {
-    /* in the stacked layout the flex-basis would become a height */
     flex: 0 0 auto;
     width: 100%;
+    min-width: 0;
     max-width: none;
   }
 

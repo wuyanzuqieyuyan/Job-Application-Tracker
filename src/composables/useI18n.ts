@@ -115,6 +115,8 @@ export const messages = {
 
     chartTitle: '求职状态分布',
     chartCenterLabel: '总记录',
+    chartExpand: '展开图表',
+    chartCollapse: '收起图表',
     chartEmpty: '还没有记录，新增一条后即可查看状态分布。',
     chartSummaryItem: '{label} {count} 条',
     chartSummary: '共 {total} 条记录：{detail}',
@@ -180,9 +182,8 @@ export const messages = {
     filterDateFrom: 'Start date',
     filterDateTo: 'End date',
     filterSortLabel: 'Sort by',
-    filterSortDesc: 'Application date (newest first)',
-    filterSortAsc: 'Application date (oldest first)',
-    filterActionsLabel: 'Filter actions',
+    filterSortDesc: 'Newest first',
+    filterSortAsc: 'Oldest first',    filterActionsLabel: 'Filter actions',
     filterSectionLabel: 'Search and filters',
     filterClear: 'Clear filters',
     filterDateRangeError:
@@ -253,6 +254,8 @@ export const messages = {
 
     chartTitle: 'Application status breakdown',
     chartCenterLabel: 'Total',
+    chartExpand: 'Show chart',
+    chartCollapse: 'Hide chart',
     chartEmpty: 'No records yet. Add one to see the status breakdown.',
     chartSummaryItem: '{label}: {count}',
     chartSummary: '{total} records: {detail}',

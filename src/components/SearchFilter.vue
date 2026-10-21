@@ -30,73 +30,77 @@ function labelFor(status: JobStatus | 'all'): string {
 
 <template>
   <section class="toolbar" :aria-label="t('filterSectionLabel')">
-    <div class="field field-search">
-      <label for="search">{{ t('filterSearchLabel') }}</label>
-      <input
-        id="search"
-        type="search"
-        :placeholder="t('filterSearchPlaceholder')"
-        :value="props.filters.keyword"
-        @input="emit('update:filters', { keyword: ($event.target as HTMLInputElement).value })"
-      />
-    </div>
-
-    <div class="field field-status">
-      <label for="status">{{ t('filterStatusLabel') }}</label>
-      <select
-        id="status"
-        :value="props.filters.status"
-        @change="emit('update:filters', { status: ($event.target as HTMLSelectElement).value as JobStatus | 'all' })"
-      >
-        <option v-for="status in statuses" :key="status" :value="status">
-          {{ labelFor(status) }}
-        </option>
-      </select>
-    </div>
-
-    <div class="field field-range">
-      <span class="field-range-label" id="date-range-label">{{ t('filterDateLabel') }}</span>
-      <div class="field-range-inputs" role="group" aria-labelledby="date-range-label">
+    <div class="toolbar-filters">
+      <div class="field field-search">
+        <label for="search">{{ t('filterSearchLabel') }}</label>
         <input
-          type="date"
-          :aria-label="t('filterDateFrom')"
-          :value="props.filters.dateFrom"
-          @change="emit('update:filters', { dateFrom: ($event.target as HTMLInputElement).value })"
-        />
-        <span class="field-range-sep" aria-hidden="true">→</span>
-        <input
-          type="date"
-          :aria-label="t('filterDateTo')"
-          :value="props.filters.dateTo"
-          @change="emit('update:filters', { dateTo: ($event.target as HTMLInputElement).value })"
+          id="search"
+          type="search"
+          :placeholder="t('filterSearchPlaceholder')"
+          :value="props.filters.keyword"
+          @input="emit('update:filters', { keyword: ($event.target as HTMLInputElement).value })"
         />
       </div>
-    </div>
 
-    <div class="field field-sort">
-      <label for="sort">{{ t('filterSortLabel') }}</label>
-      <select
-        id="sort"
-        :value="props.filters.sortOrder"
-        @change="emit('update:filters', { sortOrder: ($event.target as HTMLSelectElement).value as SortOrder })"
-      >
-        <option v-for="order in sortOrders" :key="order" :value="order">
-          {{ t(order === 'date-desc' ? 'filterSortDesc' : 'filterSortAsc') }}
-        </option>
-      </select>
-    </div>
+      <div class="field field-status">
+        <label for="status">{{ t('filterStatusLabel') }}</label>
+        <select
+          id="status"
+          :value="props.filters.status"
+          @change="emit('update:filters', { status: ($event.target as HTMLSelectElement).value as JobStatus | 'all' })"
+        >
+          <option v-for="status in statuses" :key="status" :value="status">
+            {{ labelFor(status) }}
+          </option>
+        </select>
+      </div>
 
-    <div class="field field-actions">
-      <span id="clear-filters-label" class="sr-only">{{ t('filterActionsLabel') }}</span>
-      <button
-        type="button"
-        class="btn btn-ghost field-clear-btn"
-        :disabled="!props.hasActiveFilters"
-        aria-labelledby="clear-filters-label"
-        @click="emit('clearFilters')"
-      >
-        {{ t('filterClear') }}
-      </button>
+      <div class="field field-range">
+        <span class="field-range-label" id="date-range-label">{{ t('filterDateLabel') }}</span>
+        <div class="field-range-inputs" role="group" aria-labelledby="date-range-label">
+          <input
+            type="date"
+            :aria-label="t('filterDateFrom')"
+            :value="props.filters.dateFrom"
+            @change="emit('update:filters', { dateFrom: ($event.target as HTMLInputElement).value })"
+          />
+          <span class="field-range-sep" aria-hidden="true">→</span>
+          <input
+            type="date"
+            :aria-label="t('filterDateTo')"
+            :value="props.filters.dateTo"
+            @change="emit('update:filters', { dateTo: ($event.target as HTMLInputElement).value })"
+          />
+        </div>
+      </div>
+
+      <div class="filter-pair">
+        <div class="field field-sort">
+          <label for="sort">{{ t('filterSortLabel') }}</label>
+          <select
+            id="sort"
+            :value="props.filters.sortOrder"
+            @change="emit('update:filters', { sortOrder: ($event.target as HTMLSelectElement).value as SortOrder })"
+          >
+            <option v-for="order in sortOrders" :key="order" :value="order">
+              {{ t(order === 'date-desc' ? 'filterSortDesc' : 'filterSortAsc') }}
+            </option>
+          </select>
+        </div>
+
+        <div class="field field-actions">
+          <span id="clear-filters-label" class="sr-only">{{ t('filterActionsLabel') }}</span>
+          <button
+            type="button"
+            class="btn btn-ghost field-clear-btn"
+            :disabled="!props.hasActiveFilters"
+            aria-labelledby="clear-filters-label"
+            @click="emit('clearFilters')"
+          >
+            {{ t('filterClear') }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="field field-view">

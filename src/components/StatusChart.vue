@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as echarts from 'echarts/core'
 import { PieChart } from 'echarts/charts'
 import { LegendComponent, TitleComponent, TooltipComponent } from 'echarts/components'
@@ -24,6 +24,10 @@ const props = defineProps<{
 const { t } = useI18n()
 
 const container = ref<HTMLDivElement | null>(null)
+/** 窄屏默认收起图表，把首屏空间留给搜索、筛选与记录 */
+const collapsed = ref(
+  typeof window !== 'undefined' && window.innerWidth <= 640,
+)
 let chart: echarts.ECharts | null = null
 let observer: ResizeObserver | null = null
 
@@ -97,14 +101,25 @@ function render() {
     chart = null
     return
   }
+  if (collapsed.value) return
   ensureChart()
   chart?.setOption(option.value, true)
+}
+
+/** 展开时补建实例并重新计算尺寸，实例不会被重复初始化 */
+async function toggleCollapsed() {
+  collapsed.value = !collapsed.value
+  if (collapsed.value) return
+  await nextTick()
+  ensureChart()
+  chart?.resize()
 }
 
 onMounted(render)
 
 watch(() => props.data, render, { deep: true })
 watch(() => props.total, render)
+watch(collapsed, render)
 
 onBeforeUnmount(() => {
   observer?.disconnect()
@@ -116,11 +131,32 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="chart-card" :aria-label="t('chartTitle')">
-    <h2 class="chart-title">{{ t('chartTitle') }}</h2>
+    <div class="chart-head">
+      <h2 class="chart-title">{{ t('chartTitle') }}</h2>
+      <button
+        type="button"
+        class="chart-toggle"
+        :aria-expanded="!collapsed"
+        :aria-label="collapsed ? t('chartExpand') : t('chartCollapse')"
+        @click="toggleCollapsed"
+      >
+        <svg class="chart-toggle-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path
+            :d="collapsed ? 'M4 10.5L8 6.5l4 4' : 'M4 6.5L8 10.5l4-4'"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <span>{{ collapsed ? t('chartExpand') : t('chartCollapse') }}</span>
+      </button>
+    </div>
     <p class="sr-only">{{ t('chartSummary', { total, detail: summary }) }}</p>
     <p v-if="!hasRecords" class="chart-empty">{{ t('chartEmpty') }}</p>
     <div
-      v-show="hasRecords"
+      v-show="hasRecords && !collapsed"
       ref="container"
       class="chart-canvas"
       role="img"
