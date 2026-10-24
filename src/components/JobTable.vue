@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Job } from '../types'
+import { statusBadgeStyle } from '../types'
 import type { ViewMode } from '../composables/useViewMode'
 import { useI18n } from '../composables/useI18n'
 
@@ -15,6 +16,7 @@ const emit = defineEmits<{
   (e: 'remove', job: Job): void
   (e: 'view', job: Job): void
   (e: 'clearFilters'): void
+  (e: 'create'): void
 }>()
 
 const { t, statusLabel } = useI18n()
@@ -48,7 +50,7 @@ const { t, statusLabel } = useI18n()
             <td class="cell-position" :title="job.position">{{ job.position }}</td>
             <td>{{ job.appliedDate }}</td>
             <td>
-              <span class="badge" :class="`badge-${job.status}`">
+              <span class="badge" :style="statusBadgeStyle(job.status)">
                 {{ statusLabel(job.status) }}
               </span>
             </td>
@@ -61,7 +63,7 @@ const { t, statusLabel } = useI18n()
               <div class="col-actions-list">
                 <button
                   type="button"
-                  class="btn btn-sm btn-ghost"
+                  class="btn btn-sm btn-edit"
                   @click.stop="emit('edit', job)"
                 >
                   {{ t('cardEdit') }}
@@ -81,33 +83,41 @@ const { t, statusLabel } = useI18n()
 
       <div v-else class="job-cards">
         <article v-for="job in jobs" :key="job.id" class="job-card">
-          <div class="card-head">
-            <div class="card-title">
-              <h3 class="card-company">{{ job.company }}</h3>
-              <p class="card-position">{{ job.position }}</p>
+          <!-- 卡片信息区即详情入口：键盘可达、鼠标悬停渐变、操作按钮位于同级区块（事件天然隔离） -->
+          <div
+            class="card-main"
+            role="button"
+            tabindex="0"
+            :aria-label="t('cardViewDetails')"
+            @click="emit('view', job)"
+            @keydown.enter.prevent="emit('view', job)"
+            @keydown.space.prevent="emit('view', job)"
+          >
+            <div class="card-head">
+              <div class="card-title">
+                <h3 class="card-company">{{ job.company }}</h3>
+                <p class="card-position">{{ job.position }}</p>
+              </div>
+              <span class="badge" :style="statusBadgeStyle(job.status)">
+                {{ statusLabel(job.status) }}
+              </span>
             </div>
-            <span class="badge" :class="`badge-${job.status}`">
-              {{ statusLabel(job.status) }}
-            </span>
+            <dl class="card-meta">
+              <div class="card-meta-row">
+                <dt>{{ t('cardDate') }}</dt>
+                <dd class="card-date-value">{{ job.appliedDate }}</dd>
+              </div>
+              <div class="card-meta-row card-notes-row">
+                <dt>{{ t('cardNotes') }}</dt>
+                <dd class="card-notes">{{ job.notes || '—' }}</dd>
+              </div>
+            </dl>
           </div>
-          <dl class="card-meta">
-            <div class="card-meta-row">
-              <dt>{{ t('cardDate') }}</dt>
-              <dd>{{ job.appliedDate }}</dd>
-            </div>
-            <div class="card-meta-row">
-              <dt>{{ t('cardNotes') }}</dt>
-              <dd class="card-notes">{{ job.notes || '—' }}</dd>
-            </div>
-          </dl>
           <div class="card-actions">
-            <button type="button" class="btn btn-sm btn-ghost" @click="emit('view', job)">
-              {{ t('cardDetail') }}
-            </button>
-            <button type="button" class="btn btn-sm btn-ghost" @click="emit('edit', job)">
+            <button type="button" class="btn btn-sm btn-edit" @click.stop="emit('edit', job)">
               {{ t('cardEdit') }}
             </button>
-            <button type="button" class="btn btn-sm btn-danger" @click="emit('remove', job)">
+            <button type="button" class="btn btn-sm btn-danger-ghost" @click.stop="emit('remove', job)">
               {{ t('cardDelete') }}
             </button>
           </div>
@@ -119,6 +129,9 @@ const { t, statusLabel } = useI18n()
       <template v-if="!hasAnyRecord">
         <p class="empty-title">{{ t('emptyNoRecordsTitle') }}</p>
         <p class="empty-desc">{{ t('emptyNoRecordsDesc') }}</p>
+        <button type="button" class="btn btn-sm btn-primary empty-action" @click="emit('create')">
+          {{ t('actionAddRecord') }}
+        </button>
       </template>
       <template v-else-if="isFiltering">
         <p class="empty-title">{{ t('emptyNoMatchTitle') }}</p>

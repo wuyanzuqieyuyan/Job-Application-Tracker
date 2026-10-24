@@ -32,10 +32,14 @@ const {
   clearFilters,
   stats,
   statusCounts,
+  loadState,
+  migrationNotice,
+  isSubmitting,
+  retryLoad,
   addJob,
   updateJob,
   deleteJob,
-  restoreJob,
+  restoreDeleted,
   removeJobById,
 } = useJobs()
 
@@ -82,6 +86,25 @@ const {
 
 const isFiltering = computed(() => hasActiveFilters.value)
 
+/** 迁移/加载通知文案（错误码不直接透出，只给最少量事实）。 */
+const migrationNoticeDetail = computed(() => {
+  const notice = migrationNotice.value
+  if (!notice) return ''
+  switch (notice.kind) {
+    case 'conflict':
+      return t('migrationConflictDesc', { count: notice.count, ids: notice.ids.join(', ') })
+    case 'unparsable':
+      return t('migrationUnparsableDesc')
+    case 'invalid-only':
+      return t('migrationInvalidDesc', { count: notice.count })
+    case 'partially-invalid':
+      return t('migrationPartialDesc', { count: notice.invalidCount })
+    case 'blocked':
+      // 诊断细节（迁移失败原因）保留在 notice.message 供开发排查；界面用固定本地化文案
+      return t('migrationBlockedDesc')
+  }
+})
+
 /** 图表切片与统计卡片同源，均来自 useJobs 的记录计数。 */
 const statusSlices = computed<StatusSlice[]>(() =>
   STATUS_ORDER.map((status) => ({
@@ -92,53 +115,124 @@ const statusSlices = computed<StatusSlice[]>(() =>
   })),
 )
 
-function handleSave(payload: Parameters<typeof addJob>[0]) {
+async function handleSave(payload: Parameters<typeof addJob>[0]) {
+  // 并发防护：请求进行中的重复提交直接忽略（useJobs 内部同样有锁）
+  if (isSubmitting.value) return
   if (editingJob.value) {
-    updateJob(editingJob.value.id, payload)
+    const id = editingJob.value.id
+    const updated = await updateJob(id, payload)
+    if (!updated) {
+      showToast('error', t('toastSaveFailed'), t('toastSaveFailedDesc'))
+      return
+    } // 编辑失败时保留表单与已填写内容，用户可直接重试
     showToast('edited', t('toastUpdated'), t('toastSaved'))
+    closeForm()
   } else {
-    const job = addJob(payload)
+    const job = await addJob(payload)
+    if (!job) {
+      showToast('error', t('toastSaveFailed'), t('toastSaveFailedDesc'))
+      return
+    }
     const entry = undoStack.push('add', job, jobs.value.length - 1)
     showToast('added', t('toastAdded', { company: job.company }), '', undefined, entry)
+    closeForm()
   }
-  closeForm()
 }
 
-function confirmDelete() {
+async function confirmDelete() {
   if (!pendingDelete.value) return
   const target = pendingDelete.value
-  const removed = deleteJob(target.id)
+  const removed = await deleteJob(target.id)
   cancelDelete()
-  if (!removed) {
-    showToast('error', t('toastDeleteFailed'), t('toastDeleteFailedDesc'))
-    return
+  switch (removed.outcome) {
+    case 'deleted': {
+      // P2-D2：只有 DELETE 确认成功（拿到服务器原始 9 字段快照）才开始撤销条目与 5 秒窗口
+      const entry = undoStack.pushDelete(removed.snapshot, removed.index)
+      showToast('deleted', t('toastDeleted', { company: removed.snapshot.company }), '', undefined, entry)
+      break
+    }
+    case 'absent':
+      showToast('error', t('toastDeleteFailed'), t('toastDeleteFailedDesc'))
+      break
+    case 'failed':
+      // 诊断细节已由 useJobs 输出到控制台；界面只显示本地化固定文案
+      showToast('error', t('toastDeleteFailed'), t('toastDeleteFailedBusyDesc'))
+      break
+    case 'uncertain':
+      // 结果待确认：不动列表、不展示撤销，明确告知用户去核对
+      showToast('error', t('toastDeleteUncertainTitle'), t('toastDeleteUncertainDesc'))
+      break
   }
-  const entry = undoStack.push('delete', removed.job, removed.index)
-  showToast('deleted', t('toastDeleted', { company: removed.job.company }), '', undefined, entry)
 }
 
-function handleUndo() {
+function describeRestoredToast(data: { company: string; restoredAs: 'original' | 'appended' }): { title: string; description: string } {
+  const title = t('toastRestored')
+  return {
+    title,
+    description:
+      data.restoredAs === 'original'
+        ? t('toastRestoredDesc', { company: data.company })
+        : t('toastRestoredAppendedDesc', { company: data.company }),
+  }
+}
+
+async function handleUndo() {
   const entry = undoStack.take()
   if (!entry) {
     hideToast()
     return
   }
-  let ok = false
-  let title = ''
-  let description = ''
+
   if (entry.type === 'delete') {
-    ok = restoreJob({ job: entry.job, index: entry.index })
-    title = ok ? t('toastRestored') : t('toastUndoFailed')
-    description = ok
-      ? t('toastRestoredDesc', { company: entry.job.company })
-      : t('toastUndoFailedExists')
-  } else {
-    ok = removeJobById(entry.job.id, entry.job)
-    title = ok ? t('toastUndoneAdd') : t('toastUndoFailed')
-    description = ok
-      ? t('toastUndoneAddDesc', { company: entry.job.company })
-      : t('toastUndoFailedModified')
+    // P2-D2：删除撤销 = POST /restore 提交原始快照（P2-D1 阶段曾为防御空分支）
+    if (!entry.snapshot) {
+      // 结构性防御：删除条目必须携带快照，不应出现；丢弃并如实报告
+      showToast('error', t('toastUndoFailed'), t('toastSaveFailedDesc'))
+      return
+    }
+    // 恢复请求进行中的条目受 markInFlight 保护：不会被过期回调删除；
+    // 同一条目不会因重复点击而重复提交（take 之后对同一 id 的再撤销由 useJobs busy 键拦截）
+    undoStack.markInFlight(entry.id)
+    try {
+      const result = await restoreDeleted(entry.snapshot, entry.index)
+      const next = undoStack.topEntry.value
+      if (result.outcome === 'restored') {
+        undoStack.removeById(entry.id)
+        const view = describeRestoredToast(result.data)
+        if (next && next.id !== entry.id) {
+          showToast('undone', view.title, view.description, undefined, next)
+        } else {
+          showToast('undone', view.title, view.description)
+        }
+      } else if (result.outcome === 'conflict') {
+        // 结果确定（恢复被拒绝、未覆盖任何数据）：条目原样放回直至过期，提示如实
+        undoStack.reinsert(entry)
+        const message = result.existsNow
+          ? t('toastRestoreConflictExists', { company: entry.snapshot.company, same: result.sameContent ? t('wordSame') : t('wordDifferent') })
+          : t('toastRestoreConflictGone', { company: entry.snapshot.company })
+        showToast('error', t('toastRestoreConflictTitle'), message)
+      } else if (result.outcome === 'uncertain') {
+        // 结果待定：条目原样放回（剩余窗口内可重试），绝不宣称成功/失败
+        undoStack.reinsert(entry)
+        const message = result.serverHasRecord
+          ? t('toastRestoreUncertainExists', { company: entry.snapshot.company })
+          : t('toastRestoreUncertainDesc')
+        showToast('error', t('toastRestoreUncertainTitle'), message)
+      } else {
+        // 结果确定失败：丢弃条目，提示明确失败
+        showToast('error', t('toastUndoFailed'), t('toastRestoreFailedDesc'))
+      }
+    } finally {
+      undoStack.clearInFlight(entry.id)
+    }
+    return
   }
+
+  let ok = await removeJobById(entry.job.id, entry.job)
+  const title = ok ? t('toastUndoneAdd') : t('toastUndoFailed')
+  const description = ok
+    ? t('toastUndoneAddDesc', { company: entry.job.company })
+    : t('toastSaveFailedDesc')
   const next = undoStack.topEntry.value
   if (!ok) {
     showToast('error', title, description)
@@ -202,6 +296,22 @@ function handleExportResult(result: ExportResult) {
     </header>
 
     <main class="app-main">
+      <div v-if="loadState === 'loading'" class="load-banner load-banner-info" role="status">
+        {{ t('loadingLabel') }}
+      </div>
+      <div v-else-if="loadState === 'error'" class="load-banner load-banner-error" role="alert">
+        <div class="load-banner-text">
+          <p class="load-banner-title">{{ t('loadFailureTitle') }}</p>
+          <p class="load-banner-desc">{{ t('loadFailureDesc') }}</p>
+        </div>
+        <button type="button" class="btn btn-sm btn-primary" @click="retryLoad">
+          {{ t('retryAction') }}
+        </button>
+      </div>
+      <div v-if="loadState === 'ready' && migrationNotice" class="load-banner load-banner-warn" role="status">
+        <p class="load-banner-desc">{{ migrationNoticeDetail }}</p>
+      </div>
+
       <div class="dashboard">
         <StatsBar :stats="stats" />
         <StatusChart :data="statusSlices" :total="stats.total" />
@@ -226,6 +336,7 @@ function handleExportResult(result: ExportResult) {
         @edit="openEdit"
         @remove="requestDelete"
         @view="openDetail"
+        @create="openCreate"
         @clear-filters="clearFilters"
       />
     </main>

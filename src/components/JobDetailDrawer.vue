@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { Job } from '../types'
+import { statusBadgeStyle } from '../types'
 import { useI18n } from '../composables/useI18n'
 
 const props = defineProps<{
@@ -122,7 +123,7 @@ onBeforeUnmount(() => {
               <div class="drawer-meta-row">
                 <dt>{{ t('drawerStatus') }}</dt>
                 <dd>
-                  <span class="badge" :class="`badge-${job.status}`">
+                  <span class="badge" :style="statusBadgeStyle(job.status)">
                     {{ statusLabel(job.status) }}
                   </span>
                 </dd>
@@ -139,10 +140,10 @@ onBeforeUnmount(() => {
         </div>
 
         <footer v-if="job" class="drawer-footer">
-          <button type="button" class="btn btn-ghost" @click="emit('edit', job)">
+          <button type="button" class="btn btn-primary" @click="emit('edit', job)">
             {{ t('drawerEdit') }}
           </button>
-          <button type="button" class="btn btn-danger" @click="emit('remove', job)">
+          <button type="button" class="btn btn-danger-ghost" @click="emit('remove', job)">
             {{ t('drawerDelete') }}
           </button>
         </footer>

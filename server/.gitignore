@@ -1,0 +1,5 @@
+# backend runtime data (SQLite file) - never commit
+server/data
+server/dist
+*.db
+.env

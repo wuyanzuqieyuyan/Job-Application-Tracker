@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { nextTick, onMounted, reactive, ref, watch } from 'vue'
-import type { Job } from '../types'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
+import { ElDatePicker, ElConfigProvider, ElSelect, ElOption } from 'element-plus'
+import zhCnLocale from 'element-plus/es/locale/lang/zh-cn'
+import enUsLocale from 'element-plus/es/locale/lang/en'
 import { STATUS_ORDER } from '../types'
+import type { Job } from '../types'
 import type { JobFormInput } from '../composables/useJobs'
 import { useI18n } from '../composables/useI18n'
+import 'element-plus/es/components/date-picker/style/css'
+import 'element-plus/es/components/select/style/css'
 
 const props = defineProps<{ editing: Job | null }>()
 
@@ -12,7 +17,7 @@ const emit = defineEmits<{
   (e: 'cancel'): void
 }>()
 
-const { t, statusLabel } = useI18n()
+const { t, statusLabel, locale } = useI18n()
 
 type FormState = JobFormInput
 type FormErrors = Partial<Record<keyof FormState, string>>
@@ -51,7 +56,31 @@ watch(
 )
 
 function today(): string {
-  return new Date().toISOString().slice(0, 10)
+  const now = new Date()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${now.getFullYear()}-${month}-${day}`
+}
+
+/**
+ * 申请日期控件（Element Plus ElDatePicker 单日期）：
+ * - model 转换：空串 ''（表单契约）↔ 组件空态 null，选中值为 YYYY-MM-DD 字符串（value-format），
+ *   不经过 Date 对象，表单/提交/验证/回填的日期格式和数据结构保持不变；
+ * - disabled-date 保留原生 :max="today()" 的「不能晚于今天」约束；
+ * - 面板语言随应用语言（ElConfigProvider，与筛选栏同一套 locale 响应链）；
+ * - 独立占位键 formApplicationDatePlaceholder，仅用于本窗口，不影响筛选栏。
+ */
+const formElementLocale = computed(() => (locale.value === 'en-US' ? enUsLocale : zhCnLocale))
+const datePlaceholder = computed(() => t('formApplicationDatePlaceholder'))
+const formDateModel = computed(() => form.appliedDate || null)
+
+function disableFutureDate(date: Date): boolean {
+  return date.getTime() > Date.parse(today())
+}
+
+function handleApplyDateChange(value: unknown) {
+  form.appliedDate = typeof value === 'string' ? value : ''
+  clearError('appliedDate')
 }
 
 function validate(): boolean {
@@ -137,24 +166,39 @@ function clearError(field: keyof FormErrors) {
     <div class="field-row">
       <div class="field">
         <label for="appliedDate">{{ t('formDate') }} <span class="req">*</span></label>
-        <input
-          id="appliedDate"
-          v-model="form.appliedDate"
-          type="date"
-          :max="today()"
-          :class="{ invalid: errors.appliedDate }"
-          @change="clearError('appliedDate')"
-        />
+        <el-config-provider :locale="formElementLocale">
+          <el-date-picker
+            id="appliedDate"
+            class="job-form-date"
+            type="date"
+            :model-value="formDateModel"
+            :placeholder="datePlaceholder"
+            format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD"
+            :clearable="true"
+            :disabled-date="disableFutureDate"
+            :class="{ 'is-invalid': errors.appliedDate }"
+            :teleported="true"
+            popper-class="jobtrack-form-date-popper"
+            @update:model-value="handleApplyDateChange"
+          />
+        </el-config-provider>
         <p v-if="errors.appliedDate" class="error">{{ errors.appliedDate }}</p>
       </div>
 
       <div class="field">
-        <label for="form-status">{{ t('formStatus') }}</label>
-        <select id="form-status" v-model="form.status">
-          <option v-for="status in STATUS_ORDER" :key="status" :value="status">
-            {{ statusLabel(status) }}
-          </option>
-        </select>
+        <span class="field-label" id="form-status-label">{{ t('formStatus') }}</span>
+        <el-select
+          id="form-status"
+          class="job-form-select"
+          :model-value="form.status"
+          aria-labelledby="form-status-label"
+          popper-class="jobtrack-select-popper"
+          :validate-event="false"
+          @update:model-value="(value: string | number | boolean | object | undefined) => { form.status = value as Job['status'] }"
+        >
+          <el-option v-for="status in STATUS_ORDER" :key="status" :value="status" :label="statusLabel(status)" />
+        </el-select>
       </div>
     </div>
 

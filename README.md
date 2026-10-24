@@ -27,7 +27,7 @@
 - TypeScript
 - Vite
 - 原生 CSS
-- localStorage（无额外状态管理库）
+- Express 5 + better-sqlite3 后端（职位记录的唯一存储），localStorage 只承载界面偏好与迁移标记
 - `exceljs`（仅用于生成 .xlsx，按需动态加载）
 - `echarts`（仅用于状态分布环形图，按需动态加载）
 
@@ -35,10 +35,14 @@
 
 ```bash
 npm install
-npm run dev        # 开发服务器
-npm run build      # 类型检查 + 生产构建
-npm run preview    # 预览生产构建
+npm install --prefix server   # 首次安装后端依赖
+npm run server:dev            # 后端 API（tsx watch，127.0.0.1:4000；数据库 server/data/jobs.db）
+npm run dev                   # 前端 Vite（5173，/api 已代理到 4000，应为同一终端会话）
+npm run build                 # 前端类型检查 + 生产构建
+npm run preview               # 预览生产构建
 ```
+
+前端以服务器为唯一数据源：必须先启动后端（`npm run server:dev`），否则页面在 Vite 代理上收到 5xx 并进入明确的加载失败状态（不会用本地旧数据顶替，可在错误横幅点"重试"恢复）。健康检查：`GET http://127.0.0.1:4000/api/health`。
 
 ## 项目结构
 
@@ -50,7 +54,7 @@ src/
 ├── env.d.ts                 # Vite 类型声明
 ├── types.ts                 # 类型与状态标签定义
 ├── composables/
-│   ├── useJobs.ts           # 数据、筛选、统计、localStorage 持久化
+│   ├── useJobs.ts           # 数据、筛选、统计（服务器 API 为唯一数据源）
 │   ├── useViewMode.ts       # 视图偏好（自动默认 / 手动选择 / 持久化）
 │   ├── useUndoStack.ts      # 撤销栈（LIFO、5 秒过期窗口）
 │   └── useI18n.ts           # 中英文文案字典与语言偏好
@@ -69,9 +73,10 @@ src/
 
 ## 数据说明
 
-- 记录存储键：`jobtrack.jobs.v1`
-- 视图偏好存储键：`jobtrack-view-preference`（取值 `table` / `cards`，独立于记录数据）
-- 语言偏好存储键：`jobtrack-language`（取值 `zh-CN` / `en-US`，独立于记录与视图偏好）
+- 记录存储：服务器 SQLite（`server/data/jobs.db`，环境变量 `JOBTRACK_DATA_DIR` 可覆盖；详见 `server/README.md`），浏览器仅消费 `GET /api/jobs`
+- localStorage 现状：仅语言/视图偏好与历史数据迁移标记（`jobtrack.migration.v1`）；旧记录键 `jobtrack.jobs.v1` 已冻结为只读，仅供一次性迁移读取，绝不回写、绝不回退数据源
+- 视图偏好键：`jobtrack-view-preference`（`table` / `cards`，独立于数据）
+- 语言偏好键：`jobtrack-language`（`zh-CN` / `en-US`，独立于数据与视图偏好）
 - 语言优先级：已保存的有效偏好 → 浏览器语言（`zh*` 视为 `zh-CN`，`en*` 视为 `en-US`，其余回退简体中文）
 - 记录字段：`id`、`company`、`position`、`appliedDate`、`status`、`notes`
 - 状态枚举：`applied`（待回复）、`interviewing`（面试中）、`offer`（录取）、`rejected`（已拒绝）
@@ -86,7 +91,7 @@ src/
 
 ## 已知限制
 
-- 数据仅存于当前浏览器的 localStorage，不跨设备同步；清除浏览器数据会导致记录丢失
+- 服务器是唯一数据源：记录持久化于后端 SQLite，可跨刷新与后端重启保留；停止后端时页面显示明确加载错误，恢复后可"重试"；旧 localStorage 数据只通过一次性迁移读取（标记 + 幂等 + 冲突防护，详见 `server/README.md`），失败时原键内容原样保留
 - 筛选与排序是纯前端查询，不会写回 localStorage；顶部统计始终显示**全部记录**的统计
 - 环形图只反映**当前状态分布**，不记录历史状态变更趋势；没有记录时显示空状态而不是空环
 - 窄屏（≤640px）下状态分布图默认收起以优先展示搜索、筛选与记录，展开后图表实例复用，不会重复初始化

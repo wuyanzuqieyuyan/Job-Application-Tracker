@@ -40,8 +40,9 @@ export const messages = {
     filterStatusLabel: '按状态筛选',
     filterStatusAll: '全部状态',
     filterDateLabel: '投递日期范围',
-    filterDateFrom: '起始日期',
+    filterDateFrom: '开始日期',
     filterDateTo: '结束日期',
+    filterDateRangeSeparator: '至',
     filterSortLabel: '排序方式',
     filterSortDesc: '投递日期（新 → 旧）',
     filterSortAsc: '投递日期（旧 → 新）',
@@ -50,6 +51,9 @@ export const messages = {
     filterClear: '清除筛选',
     filterDateRangeError: '起始日期不能晚于结束日期，已暂时忽略日期范围',
     filterViewLabel: '显示方式',
+    filterAdvancedShow: '更多筛选',
+    filterAdvancedShowCount: '更多筛选（{count} 项生效）',
+    filterAdvancedHide: '收起筛选',
 
     viewTable: '表格',
     viewCards: '卡片',
@@ -67,6 +71,7 @@ export const messages = {
     cardDate: '申请日期',
     cardNotes: '备注',
     cardDetail: '详情',
+    cardViewDetails: '查看详情',
     cardEdit: '编辑',
     cardDelete: '删除',
 
@@ -82,6 +87,7 @@ export const messages = {
     formCompany: '公司名称',
     formPosition: '岗位名称',
     formDate: '申请日期',
+    formApplicationDatePlaceholder: '点击选择申请日期',
     formStatus: '申请状态',
     formNotes: '备注',
     formCancel: '取消',
@@ -140,7 +146,8 @@ export const messages = {
     toastCountdown: '剩余 {seconds} 秒可撤销',
 
     confirmDeleteTitle: '确认删除',
-    confirmDeleteText: '确定要删除“{company} / {position}”这条记录吗？删除后可在提示条中撤销。',
+    // P2-D2：删除接入服务器撤销恢复后，删除不再"无法撤销"——提示如实
+    confirmDeleteText: '此操作将从服务器删除“{company} / {position}”。删除后 5 秒内可以撤销。',
     confirmCancel: '取消',
     confirmDeleteAction: '确认删除',
 
@@ -149,6 +156,18 @@ export const messages = {
     toastDeleted: '已删除「{company}」',
     toastRestored: '已恢复记录',
     toastRestoredDesc: '「{company}」已还原到原来的位置',
+    // P2-D2 新增键（恢复分支如实报告，服务端为唯一事实源）
+    toastRestoredAppendedDesc: '原来位置已被占用，「{company}」已追加到列表末尾',
+    toastRestoreConflictTitle: '无法恢复记录',
+    toastRestoreConflictExists: '服务器上已存在同 id 记录（与删除时内容{same}），本次恢复未执行、未覆盖任何数据。请刷新后自行核对',
+    toastRestoreConflictGone: '服务器上已不存在「{company}」的记录，本次恢复未执行',
+    toastRestoreUncertainTitle: '恢复结果待确认',
+    toastRestoreUncertainExists: '服务器上已有「{company}」的记录，但本次恢复请求未收到确认',
+    toastRestoreUncertainDesc: '恢复请求未收到确认，且无法核实记录状态。请刷新页面后自行核对',
+    toastDeleteUncertainTitle: '删除结果待确认',
+    toastDeleteUncertainDesc: '删除请求未收到确认，且无法核实记录状态。列表可能已变化，请刷新页面后自行核对',
+    wordSame: '相同',
+    wordDifferent: '不同',
     toastUndoneAdd: '已撤销新增',
     toastUndoneAddDesc: '「{company}」已移除',
     toastUndoFailed: '撤销失败',
@@ -156,7 +175,22 @@ export const messages = {
     toastUndoFailedModified: '记录已被修改，无法撤销',
     toastDeleteFailed: '删除失败',
     toastDeleteFailedDesc: '记录不存在或已被移除',
+    toastDeleteFailedBusyDesc: '删除未完成：该记录可能正被其他操作占用，或服务器拒绝了该请求',
+    toastRestoreFailedDesc: '恢复未完成：服务器未确认该操作。请检查连接后重试',
     toastSaved: '记录内容已保存',
+    toastSaveFailed: '保存失败',
+    toastSaveFailedDesc: '数据未保存，服务器未确认或不可达。请检查连接后重试',
+
+    loadingLabel: '正在从服务器加载数据…',
+    loadFailureTitle: '服务器数据加载失败',
+    loadFailureDesc: '服务器暂时不可用，请稍后重试。你的数据以服务器为准，未做本地替换。',
+    retryAction: '重试',
+
+    migrationUnparsableDesc: '检测到本机历史数据无法解析（已原样保留在本地），不影响服务器数据。',
+    migrationConflictDesc: '发现与服务器同 id 但内容不同的记录（涉及 {count} 条，id：{ids}），迁移已停止；本地数据未改动，服务器数据未覆盖。请联系开发者。',
+    migrationInvalidDesc: '{count} 条本地记录不符合服务器校验规则，未迁移并原样保留在本地。',
+    migrationPartialDesc: '{count} 条本地记录不符合服务器校验规则，未迁移并原样保留在本地；其余记录已迁移到服务器。',
+    migrationBlockedDesc: '历史数据迁移未完成。本地数据已保留，下次启动会自动重试。',
   },
   'en-US': {
     appSubtitle: 'Job application tracker',
@@ -181,6 +215,7 @@ export const messages = {
     filterDateLabel: 'Application date range',
     filterDateFrom: 'Start date',
     filterDateTo: 'End date',
+    filterDateRangeSeparator: 'to',
     filterSortLabel: 'Sort by',
     filterSortDesc: 'Newest first',
     filterSortAsc: 'Oldest first',    filterActionsLabel: 'Filter actions',
@@ -189,6 +224,9 @@ export const messages = {
     filterDateRangeError:
       'The start date must not be after the end date; the date range is currently ignored',
     filterViewLabel: 'View',
+    filterAdvancedShow: 'More filters',
+    filterAdvancedShowCount: 'More filters ({count} active)',
+    filterAdvancedHide: 'Hide filters',
 
     viewTable: 'Table',
     viewCards: 'Cards',
@@ -206,6 +244,7 @@ export const messages = {
     cardDate: 'Applied',
     cardNotes: 'Notes',
     cardDetail: 'Details',
+    cardViewDetails: 'View details',
     cardEdit: 'Edit',
     cardDelete: 'Delete',
 
@@ -221,6 +260,7 @@ export const messages = {
     formCompany: 'Company name',
     formPosition: 'Position name',
     formDate: 'Application date',
+    formApplicationDatePlaceholder: 'Click to select application date',
     formStatus: 'Status',
     formNotes: 'Notes',
     formCancel: 'Cancel',
@@ -279,8 +319,9 @@ export const messages = {
     toastCountdown: '{seconds}s left to undo',
 
     confirmDeleteTitle: 'Delete record',
+    // P2-D2: deleting is no longer "cannot be undone" once server-side restore is wired in
     confirmDeleteText:
-      'Delete “{company} / {position}”? You can undo this from the notification.',
+      'This deletes “{company} / {position}” from the server. You can undo within 5 seconds after deletion.',
     confirmCancel: 'Cancel',
     confirmDeleteAction: 'Delete',
 
@@ -289,6 +330,18 @@ export const messages = {
     toastDeleted: 'Deleted “{company}”',
     toastRestored: 'Record restored',
     toastRestoredDesc: '“{company}” was put back in its original position',
+    // P2-D2 addition: honest reporting for restore outcomes; the server is the single source of truth
+    toastRestoredAppendedDesc: 'The original slot was taken; “{company}” was appended to the end of the list',
+    toastRestoreConflictTitle: 'Cannot restore record',
+    toastRestoreConflictExists: 'A record with the same id already exists on the server (content {same} to the deleted one). The restore was not executed and nothing was overwritten. Refresh and verify on your own',
+    toastRestoreConflictGone: 'No record for “{company}” exists on the server anymore; the restore was not executed',
+    toastRestoreUncertainTitle: 'Restore result pending confirmation',
+    toastRestoreUncertainExists: 'A record for “{company}” exists on the server, but the restore request was not acknowledged',
+    toastRestoreUncertainDesc: 'The restore request was not acknowledged and its state cannot be verified. Refresh the page and verify on your own',
+    toastDeleteUncertainTitle: 'Delete result pending confirmation',
+    toastDeleteUncertainDesc: 'The delete request was not acknowledged and its state cannot be verified. The list may have changed; refresh the page and verify on your own',
+    wordSame: 'identical',
+    wordDifferent: 'different',
     toastUndoneAdd: 'Creation undone',
     toastUndoneAddDesc: '“{company}” was removed',
     toastUndoFailed: 'Undo failed',
@@ -296,7 +349,22 @@ export const messages = {
     toastUndoFailedModified: 'The record was modified and cannot be undone',
     toastDeleteFailed: 'Delete failed',
     toastDeleteFailedDesc: 'The record does not exist or was already removed',
+    toastDeleteFailedBusyDesc: 'The deletion did not complete: the record may be in use by another operation, or the server rejected the request',
+    toastRestoreFailedDesc: 'The restore did not complete: the server did not confirm the operation. Check your connection and try again',
     toastSaved: 'The record has been saved',
+    toastSaveFailed: 'Save failed',
+    toastSaveFailedDesc: 'Nothing was saved: the server did not confirm or is unreachable. Check your connection and try again',
+
+    loadingLabel: 'Loading data from the server…',
+    loadFailureTitle: 'Failed to load server data',
+    loadFailureDesc: 'The server is temporarily unavailable. Please try again later. Your data is managed by the server; no local data was substituted.',
+    retryAction: 'Retry',
+
+    migrationUnparsableDesc: 'Local legacy data could not be parsed (kept unchanged locally) and does not affect server data.',
+    migrationConflictDesc: 'Records share ids with the server but differ in content ({count} involved, ids: {ids}). Migration stopped; local data untouched, server data not overwritten. Contact the developer.',
+    migrationInvalidDesc: '{count} local record(s) fail server validation rules; they were not migrated and remain preserved locally.',
+    migrationPartialDesc: '{count} local record(s) fail server validation rules and were kept locally; the remaining records were migrated to the server.',
+    migrationBlockedDesc: 'Legacy migration incomplete. Local data preserved; migration retries automatically on next start.',
   },
 } as const
 
