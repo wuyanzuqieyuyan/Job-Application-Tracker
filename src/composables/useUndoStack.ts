@@ -21,12 +21,11 @@ function createEntryId(): string {
 }
 
 /**
- * LIFO stack of undoable operations.
+ * 可撤销操作的 LIFO 栈。
  *
- * Every entry carries its own absolute `expiresAt`, so pushing a new entry
- * never extends the lifetime of older ones. Expiry is always judged against
- * the wall clock (`Date.now() >= expiresAt`), never against whether a timer
- * happened to fire on time.
+ * 每个条目都携带自己的绝对过期时间 `expiresAt`，因此压入新条目绝不会延长
+ * 旧条目的有效期。过期判定始终依据墙钟（`Date.now() >= expiresAt`），
+ * 而不取决于定时器是否恰好准时触发。
  */
 export function useUndoStack(undoWindowMs: number = UNDO_WINDOW_MS) {
   const entries = ref<UndoEntry[]>([])
@@ -101,7 +100,7 @@ export function useUndoStack(undoWindowMs: number = UNDO_WINDOW_MS) {
   }
 
   /**
-   * 删除撤销专用：携带服务器原始 9 字段快照（P2-D2）。
+   * 删除撤销专用：携带服务器原始 9 字段快照。
    * 有效期规则与通用 push 完全一致（后端确认成功后才开始计时，见 App 调用点）。
    */
   function pushDelete(snapshot: DeletedJobSnapshot, index: number): UndoEntry {
@@ -140,13 +139,13 @@ export function useUndoStack(undoWindowMs: number = UNDO_WINDOW_MS) {
     inFlight.delete(entryId)
   }
 
-  /** Latest still-valid entry (older expired ones are dropped first). */
+  /** 最新一条仍有效的条目（已过期的旧条目会先被剔除）。 */
   function top(): UndoEntry | null {
     pruneExpired()
     return entries.value.length > 0 ? entries.value[entries.value.length - 1] : null
   }
 
-  /** Pops the latest still-valid entry (LIFO). */
+  /** 弹出最新一条仍有效的条目（LIFO）。 */
   function take(): UndoEntry | null {
     pruneExpired()
     if (entries.value.length === 0) return null

@@ -36,7 +36,7 @@ router.post('/import', (req, res, next) => {
   }
 })
 
-/** 撤销恢复（设计文档 v2.1 §4.3）：按删除快照恢复；201 返回恢复记录与 restoredAs。 */
+/** 撤销恢复：按删除快照恢复记录；成功返回 201 与恢复后的记录及 restoredAs 标识。 */
 router.post('/restore', (req, res, next) => {
   try {
     const restored = jobService.restoreJob(req.body)
@@ -55,7 +55,7 @@ router.put('/:id', (req, res, next) => {
   }
 })
 
-/** 删除：200 返回完整删除快照（设计文档 v2.1 §4.2），不存在 → 404。 */
+/** 删除：成功返回 200 与完整删除快照，记录不存在 → 404。 */
 router.delete('/:id', (req, res, next) => {
   try {
     const snapshot = jobService.deleteJob(req.params.id)

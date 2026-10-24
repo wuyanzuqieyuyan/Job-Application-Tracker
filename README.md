@@ -1,109 +1,125 @@
 # JobTrack
 
-一个用于追踪求职申请的轻量级网站，管理公司、岗位、申请日期、申请状态和备注。所有数据仅保存在浏览器本地（localStorage），无后端、无账号系统。
+一个轻量级的求职申请追踪应用：集中管理投递过的公司、职位、日期、状态与备注，提供组合筛选、统计图表、Excel 导出与删除撤销，帮助你在求职过程中随时掌握整体进展。
 
-## 功能
+前端为 Vue 3 + TypeScript + Vite，后端为 Express 5 + SQLite（better-sqlite3）。所有数据保存在本机，不上传到任何服务器，适合作为个人求职记录工具，也可作为前后端分离开发的参考项目。
 
-- 展示申请记录列表（公司、岗位、申请日期、状态、备注）
-- 新增、编辑、删除记录（含表单校验与删除二次确认）
-- 高级筛选与排序：关键词（公司或职位，不区分大小写）、状态、投递日期范围、投递日期升序/降序，可组合使用
-- 顶部统计：总申请数、待回复数、面试中数量、录取数量
-- 求职状态分布环形图（ECharts）：显示四种状态的记录数量与占比，数据与统计卡片同源；窄屏默认收起，可随时展开
-- 职位详情抽屉：点击表格行或卡片「详情」按钮，从右侧打开抽屉查看完整记录（含完整备注）
-- 数据持久化到 localStorage，刷新页面后保留
-- 首次启动写入虚构示例数据；清空记录后不会自动重新填充
-- 响应式布局，适配手机与电脑屏幕
-- 表格 / 卡片两种视图：默认按屏幕宽度自动选择（≤1020px 用卡片，>1020px 用表格），可手动切换并记住偏好
-- 空状态提示、操作反馈（Toast）、删除确认
-- 统一 Toast 提示：新增 / 删除 / 编辑 / 撤销成功提示，错误提示需手动关闭
-- 中英文界面切换：默认简体中文，首次访问按浏览器语言自动选择，可随时手动切换，偏好单独保存在 `jobtrack-language`
-- 撤销栈：新增与删除后 5 秒内可撤销（支持连续多次操作，按后进先出逐条撤销）
-- 导出 Excel（.xlsx）：可选择导出「当前筛选结果」或「全部记录」，文件在浏览器本地生成
-- 悬浮「＋ 新增记录」按钮：浏览长列表时无需回到顶部即可新增（表单打开时自动隐藏）
+![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-WAL-003B57?logo=sqlite&logoColor=white)
 
-## 技术栈
+## 界面截图
 
-- Vue 3（Composition API + `<script setup>`）
-- TypeScript
-- Vite
-- 原生 CSS
-- Express 5 + better-sqlite3 后端（职位记录的唯一存储），localStorage 只承载界面偏好与迁移标记
-- `exceljs`（仅用于生成 .xlsx，按需动态加载）
-- `echarts`（仅用于状态分布环形图，按需动态加载）
+![alt text](docs/screenshots/主页.png)
 
-## 启动方式
+## 核心功能
+
+- 职位记录管理：新增、编辑、删除（含表单校验与删除二次确认）
+- 组合筛选与排序：关键词（公司/职位，不区分大小写）、状态、投递日期范围、按投递日期升序/降序，可叠加使用
+- 顶部统计卡片：总申请数、待回复、面试中、录取（始终基于全部记录）
+- 求职状态分布环形图（ECharts）：四种状态的数量与占比；窄屏默认收起，可随时展开
+- 职位详情抽屉：点击记录查看完整字段与备注
+- 删除撤销：删除后 5 秒内可撤销，按原排序位置恢复（连续多次操作按后进先出逐条撤销）；新增同样可撤销
+- Excel 导出（.xlsx）：支持「全部记录」或「当前筛选结果」，文件在浏览器本地生成
+- 中英文界面：默认简体中文，首次访问按浏览器语言自动选择，可随时切换
+- 表格 / 卡片双视图：默认按屏幕宽度自动选择（≤1020px 卡片），可手动切换并记住偏好
+- 悬浮「新增记录」按钮：浏览长列表时无需回到顶部
+- 响应式布局，适配手机与桌面
+
+## 技术实现亮点
+
+- **后端是唯一数据源**：职位记录持久化于 SQLite（WAL 模式），刷新与重启后均保留；页面加载失败时给出明确错误与重试入口，不会用本地旧数据顶替
+- **稳定排序模型**：每条记录携带持久化 `sort_order`，由「高水位计数器」在写事务内分配，删除不压缩顺序；删除返回完整快照，撤销按原槽位恢复，冲突时 409 拒绝覆盖
+- **可靠的撤销体验**：前端 5 秒 LIFO 撤销栈；网络失败或结果不确定时明确提示「待确认」，绝不误报成功，必要时向服务器核对真实状态
+- **旧数据平滑迁移**：自动检测旧版本 localStorage 数据，幂等导入 + 逐条对账后才写迁移标记，失败不破坏原始数据
+- **纯前端 Excel 导出**：`exceljs` 按需动态加载，所有单元格写入纯文本（防止公式注入），数据不出浏览器
+- **统一 API 契约**：成功 `{ data }` / 失败 `{ error: { code, message } }`，前后端共享同一套状态码语义
+
+## 环境要求
+
+- Node.js ≥ 22.5（后端 better-sqlite3 的要求；推荐 24 LTS，见 `server/.nvmrc`）
+- npm（随 Node 安装）
+- 运行 E2E 测试需本机安装 Chrome 或 Edge
+
+## 快速开始
 
 ```bash
+# 1. 安装依赖（项目根目录执行）
 npm install
-npm install --prefix server   # 首次安装后端依赖
-npm run server:dev            # 后端 API（tsx watch，127.0.0.1:4000；数据库 server/data/jobs.db）
-npm run dev                   # 前端 Vite（5173，/api 已代理到 4000，应为同一终端会话）
-npm run build                 # 前端类型检查 + 生产构建
-npm run preview               # 预览生产构建
+npm install --prefix server        # 后端依赖；better-sqlite3 使用预编译二进制，无需本地编译
+
+# 2. 启动后端 API（终端 1，项目根目录执行）
+npm run server:dev                 # tsx watch，监听 http://127.0.0.1:4000
+
+# 3. 启动前端（终端 2，项目根目录执行）
+npm run dev                        # Vite 开发服务器，http://localhost:5173
 ```
 
-前端以服务器为唯一数据源：必须先启动后端（`npm run server:dev`），否则页面在 Vite 代理上收到 5xx 并进入明确的加载失败状态（不会用本地旧数据顶替，可在错误横幅点"重试"恢复）。健康检查：`GET http://127.0.0.1:4000/api/health`。
+启动后访问 **http://localhost:5173**。前端通过 Vite 代理将 `/api` 请求转发到 4000 端口，因此必须先启动后端；后端就绪可通过健康检查确认：`GET http://127.0.0.1:4000/api/health`。
+
+数据库在首次启动时自动创建并初始化（无需手动建表），无需其他初始化步骤。
+
+构建与生产运行：
+
+```bash
+npm run build                      # 前端类型检查 + 生产构建（输出 dist/）
+npm run preview                    # 本地预览生产构建
+npm run server:build               # 后端编译到 server/dist
+npm run server:start               # 生产模式启动后端（可用 PORT/HOST 环境变量覆盖）
+```
+
+## 测试
+
+```bash
+npm run server:test                # 后端 vitest 单元与集成测试
+
+npx playwright test                # 浏览器 E2E（Chrome / Edge 双引擎）
+# 前置：先按"快速开始"启动前后端两个开发服务器
+
+node server/node_modules/tsx/dist/cli.mjs tests/frontend/p2d1.integration.mjs
+# 前端接入集成测试（纯 Node 环境，不经浏览器）
+# 前置：npm run server:build 已产出 server/dist/server.js
+```
+
+测试均使用独立临时数据库（`JOBTRACK_DATA_DIR`），不会触碰真实数据。
 
 ## 项目结构
 
 ```
-src/
-├── App.vue                  # 页面编排：头部、Dashboard、弹窗、确认框、抽屉、Toast
-├── main.ts                  # 入口
-├── style.css                # 全局样式与响应式
-├── env.d.ts                 # Vite 类型声明
-├── types.ts                 # 类型与状态标签定义
-├── composables/
-│   ├── useJobs.ts           # 数据、筛选、统计（服务器 API 为唯一数据源）
-│   ├── useViewMode.ts       # 视图偏好（自动默认 / 手动选择 / 持久化）
-│   ├── useUndoStack.ts      # 撤销栈（LIFO、5 秒过期窗口）
-│   └── useI18n.ts           # 中英文文案字典与语言偏好
-├── utils/
-│   └── exportJobs.ts        # .xlsx 工作簿生成与本地下载
-└── components/
-    ├── StatsBar.vue         # 统计卡片
-    ├── StatusChart.vue      # 求职状态分布环形图（ECharts）
-    ├── SearchFilter.vue     # 搜索 + 筛选 + 排序 + 视图切换
-    ├── ExportButton.vue     # Excel 导出（全部 / 当前筛选结果）
-    ├── JobForm.vue          # 新增/编辑表单与校验
-    ├── JobTable.vue         # 记录列表（表格 / 卡片）、状态标签、空状态
-    ├── JobDetailDrawer.vue  # 职位详情抽屉
-    └── AppToast.vue         # 统一操作提示（成功 / 错误 / 撤销）
+├── index.html                  # 入口页面
+├── src/                        # Vue 3 前端
+│   ├── api/                    # API 客户端、旧数据迁移
+│   ├── components/             # StatsBar / StatusChart / SearchFilter / ExportButton
+│   │                           # JobForm / JobTable / JobDetailDrawer / AppToast
+│   ├── composables/            # useJobs / useUndoStack / useViewMode / useI18n 等
+│   ├── utils/                  # Excel 导出、日期范围映射
+│   └── types.ts                # 领域类型与状态定义
+├── tests/
+│   ├── browser/                # Playwright E2E 用例
+│   └── frontend/               # Node 环境集成测试
+├── server/                     # Express 5 + better-sqlite3 后端
+│   ├── src/                    # routes / services / repositories / middleware / db
+│   ├── tests/                  # vitest 测试与冒烟脚本
+│   └── docs/                   # 后端存储与撤销恢复设计说明
+├── vite.config.ts              # 含 /api 代理与 vitest 配置
+└── playwright.config.ts
 ```
 
-## 数据说明
+## 数据存储与注意事项
 
-- 记录存储：服务器 SQLite（`server/data/jobs.db`，环境变量 `JOBTRACK_DATA_DIR` 可覆盖；详见 `server/README.md`），浏览器仅消费 `GET /api/jobs`
-- localStorage 现状：仅语言/视图偏好与历史数据迁移标记（`jobtrack.migration.v1`）；旧记录键 `jobtrack.jobs.v1` 已冻结为只读，仅供一次性迁移读取，绝不回写、绝不回退数据源
-- 视图偏好键：`jobtrack-view-preference`（`table` / `cards`，独立于数据）
-- 语言偏好键：`jobtrack-language`（`zh-CN` / `en-US`，独立于数据与视图偏好）
-- 语言优先级：已保存的有效偏好 → 浏览器语言（`zh*` 视为 `zh-CN`，`en*` 视为 `en-US`，其余回退简体中文）
-- 记录字段：`id`、`company`、`position`、`appliedDate`、`status`、`notes`
-- 状态枚举：`applied`（待回复）、`interviewing`（面试中）、`offer`（录取）、`rejected`（已拒绝）
-- 示例数据为完全虚构的公司名与备注，不含任何真实个人求职信息
-
-## 撤销机制
-
-- 新增与删除会创建独立的撤销条目，保存记录快照与原始索引，**5 秒**后失效
-- 撤销按后进先出（LIFO）执行，连续多次操作可逐条撤销，删除可还原到原始位置
-- 待撤销操作只存在于内存，刷新页面后清空；业务数据仍正常持久化
-- 编辑操作仅提示成功，不进入撤销栈
+- 职位记录保存在 **`server/data/jobs.db`**（SQLite，WAL 模式）。数据目录自动创建，可用环境变量 `JOBTRACK_DATA_DIR` 更改位置；数据库文件已被 `.gitignore` 排除，不会提交
+- 无需手动初始化数据库：首次启动自动建表；旧版本数据库自动迁移，不删除、不清空任何记录
+- 浏览器 localStorage 只保存界面语言、视图偏好和迁移标记，不保存职位数据
+- 所有数据仅存在于本机：API 只在本地进程间通信，Excel 导出在浏览器内完成，项目不包含任何数据上传
+- 撤销栈只存在于内存，刷新页面后失效；已确认的删除与编辑会立即持久化
 
 ## 已知限制
 
-- 服务器是唯一数据源：记录持久化于后端 SQLite，可跨刷新与后端重启保留；停止后端时页面显示明确加载错误，恢复后可"重试"；旧 localStorage 数据只通过一次性迁移读取（标记 + 幂等 + 冲突防护，详见 `server/README.md`），失败时原键内容原样保留
-- 筛选与排序是纯前端查询，不会写回 localStorage；顶部统计始终显示**全部记录**的统计
-- 环形图只反映**当前状态分布**，不记录历史状态变更趋势；没有记录时显示空状态而不是空环
-- 窄屏（≤640px）下状态分布图默认收起以优先展示搜索、筛选与记录，展开后图表实例复用，不会重复初始化
-- 起始日期晚于结束日期时会提示并暂时忽略日期范围
-- 视图偏好同样只存于当前浏览器；无手动选择时按屏幕宽度（≤1020px 卡片 / >1020px 表格）自动决定
-- 窄屏下若手动选择表格视图，表格会在容器内局部横向滚动
-- 关键词搜索覆盖公司名称与职位名称（不区分大小写），不支持备注搜索
-- 未做多人共享、导入/导出、数据备份功能（仅支持导出 .xlsx，不支持导入）
-- 导出的 Excel 只包含记录字段，不包含撤销栈、视图偏好等界面状态；文件在浏览器本地生成，不会上传到任何服务器
-- 表单校验只在客户端进行，日期不允许选择未来日期
-- 撤销窗口内若该记录被再次编辑，撤销新增会被拒绝并提示「撤销失败：记录已被修改」
-- 职位详情抽屉只展示现有字段（公司、职位、投递日期、状态、完整备注），未新增职位描述或面试复盘字段
-- 桌面端点击表格行打开详情，手机端点击卡片上的「详情」按钮打开详情
-- 桌面表格中的公司名与职位名单行省略、备注最多两行，仅影响显示；完整内容始终保留在数据与详情抽屉中
-- 界面语言不影响记录数据：状态值、日期、ID 与 localStorage 结构保持不变，导出的列名与状态文案跟随当前语言
+- 面向单机单用户设计，无账号系统与多人共享
+- 关键词搜索只覆盖公司与职位名称，不搜索备注
+- 表单校验仅在客户端进行；投递日期不允许选择未来日期
+- 筛选与排序为纯前端计算；导出的 Excel 只包含记录字段，且不支持导入
+- 状态分布图只反映当前状态分布，不记录历史变化趋势
+- 删除撤销窗口固定 5 秒，刷新后不可恢复

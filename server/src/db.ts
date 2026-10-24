@@ -19,12 +19,12 @@ export const db = new Database(DB_PATH)
 db.pragma('journal_mode = WAL')
 
 /**
- * 高水位顺序计数器（设计文档 v2.1 §2.3）：持久化于 meta 表，
+ * 高水位顺序计数器：持久化于 meta 表，
  * value 为十进制整数字符串，语义"下一个可分配的 sort_order"。
  */
 export const COUNTER_KEY = 'next_sort_order'
 
-/** 计数器上限按 JS 侧对账口径取安全整数 2^53-1（v2.1 §2.3）。 */
+/** 计数器上限按 JS 侧对账口径取安全整数 2^53-1。 */
 const COUNTER_LIMIT = Number.MAX_SAFE_INTEGER
 
 export class CounterInitError extends Error {}
@@ -74,7 +74,7 @@ function readMaxSortOrder(target: Database.Database): number | null {
 }
 
 /**
- * 校验持久化计数器值（v2.1 §2.3 编码前约束 #1）：
+ * 校验持久化计数器值：
  * 十进制纯数字字符串、整数值 ∈ [1, 2^53-1]，且存有记录时须 ≥ MAX(sort_order)+1。
  * 任一违规 → 拒绝启动（不静默覆盖、不自动抬升），诊断信息包含当前值与 MAX 值。
  */
@@ -141,7 +141,7 @@ function ensureMetaAndCounter(target: Database.Database, log: LogSink): void {
 }
 
 /**
- * Schema 初始化与旧库迁移（设计文档 v2.1 §2.1/§2.3/§3.1）：
+ * Schema 初始化与旧库迁移：
  * - 新库：完整 schema（含 sort_order 与 CHECK）+ 三个索引 + meta 表，计数器初始 1；
  *   全部在同一事务内完成，失败整体回滚、下次启动重跑。
  * - 旧库（缺 sort_order 列）：PRAGMA table_info 检测；ALTER ADD COLUMN
@@ -185,7 +185,7 @@ export function ensureJobsSchema(target: Database.Database, log: LogSink = () =>
 }
 
 /**
- * 写路径读取持久化计数器并校验（设计文档 v2.1 §2.3 写入前守卫）：
+ * 写路径读取持久化计数器并校验（写入前守卫）：
  * 必须在消费计数器的写事务内调用。
  * - 键缺失：合法路径只在启动阶段自愈，写入期出现即异常 → 抛错；
  * - 值非法 / 低于现存 MAX(sort_order)：同启动校验 → 抛错；

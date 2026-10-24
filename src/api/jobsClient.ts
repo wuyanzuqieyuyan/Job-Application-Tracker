@@ -1,7 +1,7 @@
 import type { DeletedJobSnapshot, Job, JobInput, JobStatus, RestoredJobData } from '../types'
 
 /**
- * 前端统一 API 客户端（P2-D1）。
+ * 前端统一 API 客户端。
  *
  * 契约唯一依据是服务端源码（server/src/routes/jobs.ts、jobService.ts）与现有测试：
  * - 成功：`{ data: <载荷> }`；失败：`{ error: { code, message } }`。
@@ -91,7 +91,7 @@ export function isValidJobRecord(value: unknown): value is Job {
   )
 }
 
-/** 运行时校验：9 字段删除快照（id + 五业务 + sortOrder + createdAt + updatedAt，v2.1 §4.2）。 */
+/** 运行时校验：9 字段删除快照（id + 五业务 + sortOrder + createdAt + updatedAt，设计文档 §4.2）。 */
 export function isValidSnapshotRecord(value: unknown): value is DeletedJobSnapshot {
   if (!isValidJobRecord(value)) return false
   const s = value as unknown as Record<string, unknown>
@@ -150,7 +150,7 @@ export async function updateJob(id: string, input: JobInput): Promise<Job> {
 }
 
 /**
- * 删除：200 → 完整 9 字段快照（供 P2-D2 撤销恢复使用）。
+ * 删除：200 → 完整 9 字段快照（供撤销恢复使用）。
  * 404 → 抛 ApiError('job_not_found')，由调用方决定如何呈现。
  */
 export async function deleteJob(id: string): Promise<DeletedJobSnapshot> {
@@ -188,7 +188,7 @@ export function isValidRestoredRecord(value: unknown): value is RestoredJobData 
 }
 
 /**
- * 撤销恢复（设计文档 v2.1 §4.3）：请求体 `{ record: snapshot }`（9 字段原始快照，含时间戳）。
+ * 撤销恢复（设计文档 §4.3）：请求体 `{ record: snapshot }`（9 字段原始快照，含时间戳）。
  * 201 → 运行时校验 8 字段响应（restoredAs 枚举）后返回；409 → 抛 ApiError('id_conflict') 由调用方核对。
  */
 export async function restoreSnapshot(snapshot: DeletedJobSnapshot): Promise<RestoredJobData> {

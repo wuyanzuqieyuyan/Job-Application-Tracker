@@ -146,7 +146,7 @@ export const messages = {
     toastCountdown: '剩余 {seconds} 秒可撤销',
 
     confirmDeleteTitle: '确认删除',
-    // P2-D2：删除接入服务器撤销恢复后，删除不再"无法撤销"——提示如实
+    // 删除接入服务器撤销恢复后，删除不再"无法撤销"——提示如实
     confirmDeleteText: '此操作将从服务器删除“{company} / {position}”。删除后 5 秒内可以撤销。',
     confirmCancel: '取消',
     confirmDeleteAction: '确认删除',
@@ -156,7 +156,7 @@ export const messages = {
     toastDeleted: '已删除「{company}」',
     toastRestored: '已恢复记录',
     toastRestoredDesc: '「{company}」已还原到原来的位置',
-    // P2-D2 新增键（恢复分支如实报告，服务端为唯一事实源）
+    // 恢复分支的提示如实报告结果，服务端为唯一事实源
     toastRestoredAppendedDesc: '原来位置已被占用，「{company}」已追加到列表末尾',
     toastRestoreConflictTitle: '无法恢复记录',
     toastRestoreConflictExists: '服务器上已存在同 id 记录（与删除时内容{same}），本次恢复未执行、未覆盖任何数据。请刷新后自行核对',
@@ -319,7 +319,7 @@ export const messages = {
     toastCountdown: '{seconds}s left to undo',
 
     confirmDeleteTitle: 'Delete record',
-    // P2-D2: deleting is no longer "cannot be undone" once server-side restore is wired in
+    // 接入服务端撤销恢复后，删除不再"无法撤销"
     confirmDeleteText:
       'This deletes “{company} / {position}” from the server. You can undo within 5 seconds after deletion.',
     confirmCancel: 'Cancel',
@@ -330,7 +330,7 @@ export const messages = {
     toastDeleted: 'Deleted “{company}”',
     toastRestored: 'Record restored',
     toastRestoredDesc: '“{company}” was put back in its original position',
-    // P2-D2 addition: honest reporting for restore outcomes; the server is the single source of truth
+    // 恢复结果如实报告；服务端是唯一事实源
     toastRestoredAppendedDesc: 'The original slot was taken; “{company}” was appended to the end of the list',
     toastRestoreConflictTitle: 'Cannot restore record',
     toastRestoreConflictExists: 'A record with the same id already exists on the server (content {same} to the deleted one). The restore was not executed and nothing was overwritten. Refresh and verify on your own',

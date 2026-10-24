@@ -419,11 +419,11 @@ describe('import preserves historical ids', () => {
 // persistence 必须放在该文件最后：它关闭并重开数据库连接，
 // 后续对同一连接的 API 请求都会失败。
 /**
- * P2-A：Repository/Service 顺序分配与计数器接入（设计文档 v2.1 §2.3/§2.4）。
+ * 顺序分配与计数器接入。
  * API 响应不包含 sort_order（Job 五字段契约不变），顺序号经由数据库直读断言；
  * 计数器篡改类用例必须在 finally 中恢复原值，避免污染同文件后续用例。
  */
-describe('P2-A order allocation & counter integration', () => {
+describe('order allocation & counter integration', () => {
   const COUNTER_KEY = 'next_sort_order'
 
   function counterValue(): string {
@@ -629,10 +629,10 @@ describe('P2-A order allocation & counter integration', () => {
 })
 
 /**
- * P2-B：DELETE 200 删除快照（设计文档 v2.1 §4.2）。
+ * DELETE 200 删除快照。
  * 快照经单语句 RETURNING 产生（不回查拼装）；计数器与既有序号槽位保持不动。
  */
-describe('P2-B delete snapshot', () => {
+describe('delete snapshot', () => {
   const COUNTER_KEY = 'next_sort_order'
 
   function counterValue(): string {
@@ -713,12 +713,12 @@ describe('P2-B delete snapshot', () => {
 })
 
 /**
- * P2-C：恢复 API（设计文档 v2.1 §4.3）。
+ * 恢复 API。
  * DELETE 200 快照 → POST /api/jobs/restore：原槽位空闲恢复原位（计数器不动）；
  * 槽位被占（外部修改等防御分支）→ 计数器同事务追加；id 冲突 409 不覆盖；
  * 时间戳精确保留。涉及数据库篡改的用例一律在 finally 中清理恢复。
  */
-describe('P2-C restore API', () => {
+describe('restore API', () => {
   const COUNTER_KEY = 'next_sort_order'
   const TS_A = '2026-10-01T08:15:42.083Z'
   const TS_B = '2026-10-02T09:30:00.500Z'
@@ -748,7 +748,7 @@ describe('P2-C restore API', () => {
     const res = await request('POST', '/api/jobs/restore', { record: snapshot })
     expect(res.status).toBe(201)
     const restored = dataOf(res) as Record<string, unknown>
-    // P2-C-FIX：整对象断言——响应恰好只含既定 8 字段，不含 createdAt/updatedAt
+    // 整对象断言：响应恰好只含既定 8 字段，不含 createdAt/updatedAt
     expect(restored).toEqual({
       id,
       company: snapshot.company,
@@ -787,7 +787,7 @@ describe('P2-C restore API', () => {
     const res = await request('POST', '/api/jobs/restore', { record: snapshotA })
     expect(res.status).toBe(201)
     const restored = dataOf(res) as Record<string, unknown>
-    // P2-C-FIX：整对象断言——追加路径同样恰好只含既定 8 字段
+    // 整对象断言：追加路径同样恰好只含既定 8 字段
     expect(restored).toEqual({
       id: idA,
       company: snapshotA.company,
@@ -839,7 +839,7 @@ describe('P2-C restore API', () => {
     const counterBefore = counterValue()
     const rowsBefore = (db!.prepare('SELECT COUNT(*) AS c FROM jobs').get() as { c: number }).c
 
-    // 失败注记一：INSERT 阶段失败
+    // 注入失败点一：INSERT 阶段失败
     db!.exec(`CREATE TRIGGER trg_p2c_fail_insert BEFORE INSERT ON jobs BEGIN SELECT RAISE(ABORT,'p2c-injected'); END`)
     try {
       const r = await request('POST', '/api/jobs/restore', { record: snapshotA })
@@ -852,7 +852,7 @@ describe('P2-C restore API', () => {
       db!.exec('DROP TRIGGER trg_p2c_fail_insert')
     }
 
-    // 失败注记二：计数器推进阶段失败（INSERT 已完成，须连同回滚）
+    // 注入失败点二：计数器推进阶段失败（INSERT 已完成，须连同回滚）
     db!.exec(
       `CREATE TRIGGER trg_p2c_fail_counter AFTER UPDATE ON meta
        WHEN NEW.key = 'next_sort_order' BEGIN SELECT RAISE(ABORT,'p2c-injected-counter'); END`
@@ -913,7 +913,7 @@ describe('P2-C restore API', () => {
     await expect400({ ...snapshot, createdAt: '2026-10-23' }, 'invalid_request')
     await expect400({ ...snapshot, createdAt: 'not-a-timestamp' }, 'invalid_request')
     await expect400({ ...snapshot, updatedAt: '2026-10-02' }, 'invalid_request')
-    // P2-C-FIX：字段越界滚动型非法日历日期（Date.parse 会把 2/30、非闰 2/29 进位，靠回环比对拦截）
+    // 字段越界滚动型非法日历日期（Date.parse 会把 2/30、非闰 2/29 进位，靠回环比对拦截）
     await expect400({ ...snapshot, createdAt: '2026-02-30T08:15:42.083Z' }, 'invalid_request')
     await expect400({ ...snapshot, createdAt: '2026-02-29T08:15:42.083Z' }, 'invalid_request')
     await expect400({ ...snapshot, updatedAt: '2026-02-30T08:15:42.083Z' }, 'invalid_request')
@@ -924,7 +924,7 @@ describe('P2-C restore API', () => {
     await deleteAndGetSnapshot('p2c-valid')
   })
 
-  it('P2-C-FIX: invalid calendar dates rejected e2e; bad timestamps return 400 and nothing is written', async () => {
+  it('invalid calendar dates rejected e2e; bad timestamps return 400 and nothing is written', async () => {
     const record = {
       id: 'p2c-leap-bad',
       company: '示例科技',
@@ -948,7 +948,7 @@ describe('P2-C restore API', () => {
     await expect400withNothing({ updatedAt: '2026-02-29T08:15:42.083Z' })
   })
 
-  it('P2-C-FIX: valid leap-day timestamps (2024, leap year) accepted e2e and preserved exactly', async () => {
+  it('valid leap-day timestamps (2024, leap year) accepted e2e and preserved exactly', async () => {
     const created = await request('POST', '/api/jobs', { ...NEW_JOB, notes: 'p2c-leap-good' })
     const id = (dataOf(created) as { id: string }).id
     const snapshot = await deleteAndGetSnapshot(id)

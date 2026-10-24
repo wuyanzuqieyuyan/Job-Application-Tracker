@@ -14,13 +14,13 @@ import type { MigrationNotice } from '../api/migration'
 import { migrateLegacyIfNeeded } from '../api/migration'
 
 /**
- * 数据访问层（P2-D1）：SQLite 后端是职位数据的唯一事实来源。
+ * 数据访问层：SQLite 后端是职位数据的唯一事实来源。
  *
  * - 初始化：`GET /api/jobs` 加载；失败进入 error 状态并提供 retryLoad()，绝不静默回退 localStorage。
  * - 初始化成功后才执行历史数据迁移（migration.ts；判据依据迁移标记，而非服务器记录数）。
  * - localStorage 仅保留迁移标记与语言/视图偏好；职位数组不再有任何深度 watch 回写。
  * - 创建/编辑/删除均先完成服务端请求，成功后才更新内存；失败保持列表不变并返回失败信号。
- * - 删除返回服务端 9 字段快照（供 P2-D2 撤销恢复接口使用）；本阶段不接入 `POST /api/jobs/restore`。
+ * - 删除返回服务端 9 字段快照（供撤销恢复使用）。
  * - 未加载完成（loading/error）时所有写操作直接拒绝，避免假数据造成覆盖。
  */
 
@@ -29,14 +29,14 @@ export type JobsLoadState = 'loading' | 'ready' | 'error'
 /** 编辑表单的五字段载荷（与 JobForm.vue 既有导出保持兼容）。 */
 export interface JobFormInput extends JobInput {}
 
-/** 删除操作结果（P2-D2）：窄联合类型，App 按 outcome 分派提示与撤销栈动作。 */
+/** 删除操作结果：窄联合类型，App 按 outcome 分派提示与撤销栈动作。 */
 export type DeleteOutcome =
   | { outcome: 'deleted'; snapshot: DeletedJobSnapshot; index: number }
   | { outcome: 'absent' }
   | { outcome: 'failed'; message: string }
   | { outcome: 'uncertain'; message: string }
 
-/** 恢复操作结果（P2-D2）。serverHasRecord：true=GET 确认存在；false=确认不存在；null=无法核对。 */
+/** 恢复操作结果。serverHasRecord：true=GET 确认存在；false=确认不存在；null=无法核对。 */
 export type RestoreOutcome =
   | { outcome: 'restored'; data: RestoredJobData; synced: boolean }
   | { outcome: 'conflict'; existsNow: boolean; sameContent: boolean }
@@ -126,7 +126,7 @@ export function useJobs() {
 
   const filters = ref<JobFilters>({ ...DEFAULT_FILTERS })
 
-  /** True when the chosen date range is contradictory (start after end). */
+  /** 所选日期范围自相矛盾（起始晚于结束）时为 true。 */
   const dateRangeInvalid = computed(() => {
     const { dateFrom, dateTo } = filters.value
     return dateFrom !== '' && dateTo !== '' && dateFrom > dateTo
@@ -143,8 +143,8 @@ export function useJobs() {
   })
 
   /**
-   * Query pipeline: keyword -> status -> date range -> sort.
-   * Always works on a copy; the reactive source array is never mutated.
+   * 查询流水线：关键词 → 状态 → 日期范围 → 排序。
+   * 始终在副本上运算；响应式源数组绝不会被修改。
    */
   const filteredJobs = computed<Job[]>(() => {
     const { keyword, status, dateFrom, dateTo, sortOrder } = filters.value
@@ -164,7 +164,7 @@ export function useJobs() {
       if (status !== 'all' && job.status !== status) return false
       if (!ignoreRange && (hasFrom || hasTo)) {
         const time = Date.parse(job.appliedDate)
-        // records with an unreadable date cannot be placed in a range
+        // 日期无法解析的记录无法落入任何范围
         if (Number.isNaN(time)) return false
         if (hasFrom && time < from) return false
         if (hasTo && time > to) return false
@@ -180,16 +180,16 @@ export function useJobs() {
         const timeB = Date.parse(b.job.appliedDate)
         const validA = !Number.isNaN(timeA)
         const validB = !Number.isNaN(timeB)
-        // unreadable dates are always pushed to the end
+        // 无法解析的日期始终排到末尾
         if (validA !== validB) return validA ? -1 : 1
         if (validA && timeA !== timeB) return (timeA - timeB) * direction
-        // stable secondary rule: keep the original insertion order
+        // 稳定的次级规则：保持原始插入顺序
         return a.index - b.index
       })
       .map((entry) => entry.job)
   })
 
-  /** Record count per status. Single source of truth for the statistics. */
+  /** 各状态的记录数。顶部统计数据的唯一事实来源。 */
   const statusCounts = computed<Record<JobStatus, number>>(() => {
     const counts: Record<JobStatus, number> = {
       applied: 0,
@@ -250,7 +250,7 @@ export function useJobs() {
   }
 
   /**
-   * 删除（P2-D2 四态结果）：
+   * 删除（四态结果）：
    * - deleted：服务器确认成功（9 字段快照），本地同步移除；撤销条目由调用方在确认后才压栈。
    * - absent：服务器确认无此记录（404）——按"服务器为准"同步移除本地过期记录，不产生撤销。
    * - failed：服务器明确拒绝/确认未删除（核对发现记录仍在），列表不变。
@@ -302,7 +302,7 @@ export function useJobs() {
   }
 
   /**
-   * 撤销删除（P2-D2）：POST /restore 提交原始 9 字段快照；成功后以重新拉取的
+   * 撤销删除：POST /restore 提交原始 9 字段快照；成功后以重新拉取的
    * 服务器列表为准同步显示（服务器排序权威，还原位置由 restoredAs 表达）。
    * - 409：不覆盖同 id 记录；先 GET 核对当前服务器内容再报告，条目与数据由调用方处置。
    * - 不确定（网络/5xx/解析失败）：按 GET 核对；只报告"服务器当前是否存在"这一事实，
@@ -406,12 +406,12 @@ export function useJobs() {
     return true
   }
 
-  /** Applies a partial filter change. */
+  /** 应用一次部分筛选变更。 */
   function patchFilters(patch: Partial<JobFilters>) {
     filters.value = { ...filters.value, ...patch }
   }
 
-  /** Restores the default filters and the default sort order. */
+  /** 恢复默认筛选与默认排序。 */
   function clearFilters() {
     filters.value = { ...DEFAULT_FILTERS }
   }

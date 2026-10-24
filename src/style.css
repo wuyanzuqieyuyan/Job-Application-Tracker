@@ -1,39 +1,39 @@
 /* ============================================================
-   1. ��������������
+   1. 基础变量与重置
    ============================================================ */
 :root {
-  /* ��ɫ������ */
+  /* 背景、表面与文字 */
   --bg: #f4f6fb;
   --surface: #ffffff;
-  --surface-hover: #f1f5f9; /* ��ͣ/�����ǳ���� */
-  --surface-muted: #f8fafc; /* ��ǳ�����ף���ͷ����ע�顢������ͣ */
-  --surface-sunken: #eef2f7; /* ���۵ף��ֶοؼ������������ */
+  --surface-hover: #f1f5f9; /* 悬停/按下更浅背景 */
+  --surface-muted: #f8fafc; /* 更浅表面：页头、备注、禁用输入框 */
+  --surface-sunken: #eef2f7; /* 凹陷底（分段控件等下沉区域） */
   --border: #e2e8f0;
   --border-hover: #cbd5e1;
   --text: #1e293b;
   --text-strong: #0f172a;
   --text-muted: #64748b;
   --text-faint: #94a3b8;
-  --text-on-accent: #fff; /* ʵɫ���ϵİ���/��ͼ�� */
+  --text-on-accent: #fff; /* 实色背景上的白色文字/图标 */
 
-  /* ��ɫ������ */
+  /* 主色变量组 */
   --primary: #2563eb;
-  --primary-strong: #1d4ed8; /* ����ɫ��ǳ�����ϵ�ǿ��������ͼ�� */
+  --primary-strong: #1d4ed8; /* 更深的主色：浅背景上的强调文字与图表 */
   --primary-hover: var(--primary-strong);
-  --primary-subtle: #eff6ff; /* ǳ���� */
-  --primary-tint: #dbeafe; /* ǳ��Ԫ�صı߿�����ͣ��ɫ */
+  --primary-subtle: #eff6ff; /* 浅蓝底 */
+  --primary-tint: #dbeafe; /* 浅色元素的边框或悬停色 */
   --primary-tint-hover: #bfdbfe;
 
-  /* Σ�գ��죩 */
+  /* 危险（红） */
   --danger: #ef4444;
-  --danger-strong: #b91c1c; /* ��죺��Σ�հ�ť���֡�������ʾ */
+  --danger-strong: #b91c1c; /* 深红：危险按钮文字、边框、错误提示 */
   --danger-hover: var(--danger-strong);
-  --danger-tint: #fee2e2; /* ǳ���/�߿� */
+  --danger-tint: #fee2e2; /* 浅红底/边框 */
   --danger-tint-hover: #fecaca;
 
-  /* ״̬��ɫ��һ��Դ�� src/types.ts��STATUS_COLORS / STATUS_BADGE_STYLES�� */
+  /* 状态徽标颜色唯一来源：src/types.ts 的 STATUS_COLORS / STATUS_BADGE_STYLES */
   --radius: 10px;
-  --radius-md: 8px; /* �ؼ�ͳһԲ�� */
+  --radius-md: 8px; /* 控件统一圆角 */
   --radius-full: 999px;
   --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.06);
   --transition-fast: 0.15s ease;
@@ -64,11 +64,11 @@ body {
 }
 
 /* ============================================================
-   2. ҳ�沼�֣�ҳͷ�����塢Dashboard��
+   2. 页面布局（页头、主体、Dashboard）
    ============================================================ */
 .app {
-  /* ���������㹻�ռ䣬��ɸѡ���Ĳ�����������ɸѡ����ͬ����һ�� */
-  /* �ײ���������������������ť�����밲ȫ���򣬹�������ʱ���һ�ſ������ڵ� */
+  /* 宽屏留出足够空间，让筛选栏的操作区可以与筛选条件同处第一行 */
+  /* 底部预留悬浮新增按钮与安全区的空间，滚动长列表时内容不被遮挡 */
   max-width: 1400px;
   margin: 0 auto;
   padding: 24px 20px calc(72px + env(safe-area-inset-bottom, 0px));
@@ -83,7 +83,7 @@ body {
   flex-wrap: wrap;
 }
 
-/* ��Ҫ���������������������ţ���ʽһ�� */
+/* 主要操作区：导出与新增并排，样式一致 */
 .app-actions {
   display: flex;
   align-items: center;
@@ -91,7 +91,7 @@ body {
   flex-wrap: wrap;
 }
 
-/* ��Ӣ�İ�ť���ȱ���һ�£������л�����ʱҳ����򶶶� */
+/* 中英文按钮宽度保持一致，避免切换语言时页面横向抖动 */
 .btn-lang,
 .btn-export {
   min-width: 144px;
@@ -142,9 +142,9 @@ body {
   border-color: var(--border-hover);
 }
 
-/* ����������ť���������б�ʱ��ʱ���� */
+/* 悬浮新增按钮：滚动长列表时随时可用 */
 /* ============================================================
-   3. ����������ť
+   3. 悬浮新增按钮
    ============================================================ */
 .fab-add {
   position: fixed;
@@ -227,9 +227,9 @@ body {
   align-items: stretch;
 }
 
-/* 2 x 2 KPI tiles fill the left column, so it matches the chart height */
+/* 2×2 统计卡片填满左列，与图表高度对齐 */
 /* ============================================================
-   4. ͳ�ƿ�Ƭ��״̬�ֲ�ͼ
+   4. 统计卡片与状态分布图
    ============================================================ */
 .dashboard .stats {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -257,7 +257,7 @@ body {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 6px;
-  /* �������߶ȹ̶���չ��������ʱ�������� */
+  /* 标题栏高度固定，展开与收起时不会跳动 */
   min-height: 24px;
 }
 
@@ -306,7 +306,7 @@ body {
   height: 240px;
   min-width: 0;
   overflow: hidden;
-  /* չ��/����ʹ�ø߶ȹ��ɣ�����˲������ */
+  /* 展开/收起使用高度过渡，避免瞬间跳动 */
   transition: height 200ms ease, opacity 160ms ease;
 }
 
@@ -367,7 +367,7 @@ body {
 }
 
 /* ============================================================
-   5. ɸѡ������
+   5. 筛选工具栏
    ============================================================ */
 .toolbar {
   display: flex;
@@ -425,7 +425,7 @@ textarea {
   resize: vertical;
 }
 
-/* ������������ / ɸѡ���� / �������飬���ڿ��ȹ̶����������Ա仯 */
+/* 工具栏：搜索 / 筛选条件 / 操作三组，组内宽度固定，不随语言变化 */
 .toolbar-group {
   display: flex;
   align-items: flex-end;
@@ -442,19 +442,19 @@ textarea {
   flex-wrap: wrap;
 }
 
-/* ���������忿�ң��ռ䲻��ʱ���黻�У��Ա����Ҷ��� */
+/* 操作区整体靠右；空间不足时整组换行，仍保持右对齐 */
 .toolbar-actions {
   flex: 0 0 auto;
   margin-left: auto;
 }
 
-/* �������ڵ��ֶ�ʹ�ù̶����ȣ��л�����ʱ�������·���ռ� */
+/* 工具栏内的字段使用固定宽度，切换语言时不会重新分配空间 */
 .toolbar .field {
   flex: 0 0 auto;
   min-width: 0;
 }
 
-/* ��������Ҫ�㹻���ȣ�����˲���������ʾ placeholder ���������� */
+/* 搜索框需要足够宽度，桌面端才能完整显示 placeholder 与输入内容 */
 .toolbar .field-search {
   flex: 1 1 auto;
   width: 100%;
@@ -493,7 +493,7 @@ textarea {
 }
 
 .toolbar .field-sort {
-  /* ��Ҫ�����ѡ���ı���ԭ��������ͷ */
+  /* 需要容纳最长选项文本与原生下拉箭头 */
   flex: 0 0 190px;
 }
 
@@ -506,11 +506,11 @@ textarea {
 .field-clear-btn {
   white-space: nowrap;
   height: 43px;
-  /* ��Ӣ���İ����Ȳ�ͬ������С���ȱ�֤��ť�����ȶ� */
+  /* 中英文文案长度不同，用最小宽度保证按钮宽度稳定 */
   min-width: 118px;
 }
 
-/* every filter control shares one height, so the row lines up perfectly */
+/* 所有筛选控件共享同一高度，使整行完全对齐 */
 .toolbar input,
 .toolbar select,
 .toolbar .field-clear-btn {
@@ -520,12 +520,12 @@ textarea {
 .field-error {
   flex: 1 0 100%;
   margin: 0;
-  /* ��챣֤ 12.5px С���ڰ׵��ϵĶԱȶ� �� WCAG AA */
+  /* 深红保证 12.5px 小字在浅底上的对比度 → WCAG AA */
   color: var(--danger-strong);
   font-size: 12.5px;
 }
 
-/* խ�ӿڵĴμ�ɸѡ�۵����أ����������˲���Ⱦ�ð�ť�� */
+/* 窄视口的次级筛选折叠开关按钮 */
 .filter-advanced-toggle {
   display: inline-flex;
   align-items: center;
@@ -569,15 +569,15 @@ textarea {
   cursor: not-allowed;
 }
 
-/* ���̽���ͳһ�ɼ������ڼ��̲���ʱ��ʾ��:focus-visible�����������������
-   ���㻷ͳһʹ�� --primary�����������ר�����򱣳ֲ��� */
+/* 键盘焦点统一可见：仅在键盘操作时显示（:focus-visible），鼠标点击不显示；
+   焦点环统一使用 --primary，文本输入类控件保持原有样式 */
 .btn:focus-visible,
 .view-toggle-btn:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
-/* խ���ֶΰ�ť���� 2px���۽�ʱ̧���㼶�����⽹�㻷�����ڷֶ��ڵ� */
+/* 分段按钮聚焦时抬升层级（z-index），避免焦点环被相邻分段裁剪 */
 .view-toggle-btn:focus-visible {
   position: relative;
   z-index: 1;
@@ -602,7 +602,7 @@ textarea {
   background: var(--surface-sunken);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  /* �����ֶε���Ӣ�Ŀ��Ȳ�ͬ���̶��ܿ������л�����ʱ���� */
+  /* 显示方式分段的中英文宽度不同，固定最小宽度避免切换语言时抖动 */
   min-width: 290px;
 }
 
@@ -734,7 +734,7 @@ textarea {
 }
 
 /* ============================================================
-   6. ͨ�ÿؼ�����ť���������ձ꣩
+   6. 通用控件（按钮、表单、徽标）
    ============================================================ */
 .btn {
   font: inherit;
@@ -780,7 +780,7 @@ textarea {
 }
 
 /* ============================================================
-   7. ��¼�б������� / ��Ƭ��
+   7. 记录列表（表格 / 卡片）
    ============================================================ */
 .table-wrap {
   background: var(--surface);
@@ -811,7 +811,7 @@ textarea {
   background: var(--surface-muted);
 }
 
-/* �п����ٷֱ��������������ţ������й̶� px���ܺͲ�С�� 100% ʱ�����������ѹ�� */
+/* 列宽：百分比列随表格宽度缩放，操作列固定 px；总和不小于 100% 时浏览器按比例压缩 */
 .job-table thead th:nth-child(1) {
   width: 24%;
 }
@@ -836,7 +836,7 @@ textarea {
   width: 130px;
 }
 
-/* ״̬�о��У����ͷ����һ�£�����ձ����ڿ���Ԫ���һ�� */
+/* 状态列居中，与表头保持一致，避免徽标贴在宽单元格的一侧 */
 .job-table thead th:nth-child(4),
 .job-table tbody td:nth-child(4) {
   text-align: center;
@@ -855,7 +855,7 @@ textarea {
   overflow-wrap: anywhere;
   word-break: normal;
   min-width: 0;
-  /* single line: the full text stays available in the detail drawer */
+  /* 备注单行显示：完整文本仍可在详情抽屉中查看 */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -875,8 +875,8 @@ textarea {
   min-width: 0;
 }
 
-/* notes: at most two lines within a bounded column width,
-   the full text stays available in the drawer */
+/* 备注最多两行，列宽受限，
+   完整文本始终可在抽屉中查看 */
 .cell-notes-text {
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -904,7 +904,7 @@ textarea {
   white-space: nowrap;
 }
 
-/* Row level actions: soft blue edit, soft red delete */
+/* 行内操作按钮：浅蓝编辑、浅红删除 */
 .col-actions-list .btn-ghost,
 .card-actions .btn-ghost {
   color: #475569;
@@ -957,8 +957,8 @@ textarea {
 }
 
 
-/* ��ɫ���� src/types.ts �� STATUS_BADGE_STYLES��ǳɫ���� + ��ɫ���֣���
-   ����ֻ������״����֤����״̬�ձ��Ӿ�һ�� */
+/* 颜色来自 src/types.ts 的 STATUS_BADGE_STYLES（浅色底 + 深色文字），
+   此处只负责形状，保证状态徽标视觉一致 */
 .badge {
   display: inline-block;
   padding: 3px 10px;
@@ -1040,7 +1040,7 @@ textarea {
   font-size: 16px;
   font-weight: 700;
   min-width: 0;
-  /* ����ʡ�ԣ�����ԭ�ı�������������� */
+  /* 公司名单行省略：仅影响显示，不损失原始内容 */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1097,7 +1097,7 @@ textarea {
   gap: 10px;
 }
 
-/* ��Ƭ���������ȷ����У���������С�� 44px */
+/* 卡片操作区：等分整行，触控区域不小于 44px */
 .card-actions .btn {
   min-height: 44px;
   min-width: 0;
@@ -1108,7 +1108,7 @@ textarea {
   text-overflow: ellipsis;
 }
 
-/* �����ǿ�Ƭ����Ҫ�������༭/ɾ��Ϊ�μ����� */
+/* 详情是卡片的主要动作，编辑/删除为次级动作 */
 .card-actions .btn:nth-child(1) {
   color: var(--primary-strong);
   background: var(--primary-subtle);
@@ -1123,7 +1123,7 @@ textarea {
 .drawer-overlay {
   position: fixed;
   inset: 0;
-  /* below the toast (60) so notifications stay visible, above the page content */
+  /* 位于 Toast（60）之下保证通知可见，同时高于页面内容 */
   z-index: 45;
   display: flex;
   justify-content: flex-end;
@@ -1285,7 +1285,7 @@ textarea {
 }
 
 /* ============================================================
-   8. �������������
+   8. 弹窗与详情抽屉
    ============================================================ */
 .overlay {
   position: fixed;
@@ -1337,7 +1337,7 @@ textarea {
 }
 
 /* ============================================================
-   9. Toast ������ʾ
+   9. Toast 操作提示
    ============================================================ */
 .toast-wrap {
   position: fixed;
@@ -1554,7 +1554,7 @@ textarea {
 }
 
 /* ============================================================
-   10. ��Ӧʽ�����붯Ч����
+   10. 响应式规则与动效降级
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {
   .drawer,
@@ -1573,14 +1573,14 @@ textarea {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  /* խ�������������ں������ */
+  /* 窄屏表格在容器内横向滚动 */
   .job-table {
     min-width: 700px;
   }
 }
 @media (max-width: 640px) {
   .app {
-    /* 96px ���� FAB��48px �� + 14px �±߾ࣩ���ٵ��Ӱ�ȫ���� */
+    /* 96px ≈ 底部悬浮按钮（48px 高 + 14px 下边距）加阴影余量，避免遮挡列表底部 */
     padding: 16px 14px calc(96px + env(safe-area-inset-bottom, 0px));
   }
 
@@ -1597,7 +1597,7 @@ textarea {
     font-size: 19px;
   }
 
-  /* �ֻ���ͷ����ť��Ϊ������̬�����ֵ����Ҳ������ڵ� */
+  /* 手机端头部按钮改为紧凑形态，保持单行且不互相遮挡 */
   .app-actions {
     gap: 8px;
   }
@@ -1606,7 +1606,7 @@ textarea {
   .btn-export {
     width: 44px;
     height: 44px;
-    /* ��������� min-width:144px ��ѹ���˴��� width���ƶ��˱�����ʽ��� */
+    /* 手机端改为 44×44 图标按钮：撤销桌面端 min-width:144px 与内边距 */
     min-width: 0;
     padding: 0;
     justify-content: center;
@@ -1676,7 +1676,7 @@ textarea {
     margin-left: 0;
   }
 
-  /* ��������ʱ flex-basis ���ɸ߶ȣ�����ͳһ��Ϊ���ݸ߶� */
+  /* 纵向排列时 flex-basis 会变成高度，这里统一改为内容高度 */
   .toolbar .field {
     flex: 0 0 auto;
     width: 100%;
@@ -1696,13 +1696,13 @@ textarea {
 
   .field-actions {
     width: auto;
-    /* stacked layout: the cross axis is horizontal, so reset the baseline */
+    /* 纵向堆叠布局：交叉轴变为水平方向，重置基线 */
     align-self: flex-end;
   }
 
   .field-view {
     width: auto;
-    /* ��������ʱ�Ҳ�����ʧЧ���ָ�Ϊ����� */
+    /* 纵向排列时右侧对齐会失效，恢复为左对齐 */
     margin-left: 0;
   }
 
@@ -1715,7 +1715,7 @@ textarea {
     justify-content: center;
   }
 
-  /* ��������խ���Ա���һ�У���ʾ��ʽ��ѹ�������ɸѡ���ȹ̶� */
+  /* 操作区在窄屏仍保持一行：显示方式可压缩，清除筛选宽度固定 */
   .toolbar-actions {
     flex-direction: row;
     flex-wrap: nowrap;
@@ -1767,7 +1767,7 @@ textarea {
     flex-direction: column;
   }
 
-  /* խ����Բ��ͼ�갴ť�����ٶԿ�Ƭ���������ڵ� */
+  /* 窄屏用圆形图标按钮，减少对卡片操作区的遮挡 */
   .fab-add {
     right: 14px;
     bottom: calc(14px + env(safe-area-inset-bottom, 0px));
@@ -1813,7 +1813,7 @@ textarea {
   }
 }
 
-/* P2-D1: server-data loading / error / migration notice banners */
+/* 服务器数据加载 / 错误 / 迁移提示横幅 */
 .load-banner {
   display: flex;
   align-items: center;
@@ -1862,17 +1862,17 @@ textarea {
   overflow-wrap: anywhere;
 }
 
-/* ---- P2 ���ڷ�Χ�ؼ�ͳһ����Element Plus daterange �ֲ����� ----
-   Ŀ�꣺�빤���������ؼ�ͬһ�߶ȣ�43px����ͬһ���ȣ�field-range 250px����
-   ͬһ�߿�/Բ��/������ߣ������������λ����������
-   �����������ڱ��ؼ�������ȫվ���⡣ */
+/* ---- 投递日期范围控件统一化（Element Plus daterange 植入说明） ----
+   目标：与工具栏其他控件同一高度（43px）、同一组边框/圆角/焦点样式，
+   宽度跟随字段容器（field-range 内 100%），不改变既有布局位置；
+   视觉对齐原生日期控件，融入全站主题。 */
 .toolbar .field-range .field-range-picker {
   width: 100%;
   min-width: 0;
   --el-date-editor-daterange-width: 100%;
 }
 
-/* �߶�/�߿�/Բ��/�����루���Ĭ�� 40px��Ĭ����ɫ��������ⲻͬ�� */
+/* 高度/边框/圆角/阴影对齐主题（Element Plus 默认 40px、默认配色与主题不同） */
 .toolbar .field-range .el-date-editor--daterange {
   height: 43px;
   border: 1px solid var(--border);
@@ -1909,27 +1909,27 @@ textarea {
   flex: 0 0 auto;
 }
 
-/* խ������640����field-range ����ȫ������������������ȣ������� teleport �� body�������۵������ü� */
+/* 窄屏（≤640px）field-range 保持全宽：弹层 teleport 到 body，宽度与工具栏折叠按钮无关 */
 
-/* ����ֲ���ʽ�������б��ؼ��� popper-class��teleported �� body��scoped �޷���Ч����
-   ��ʹ��ȫ�� --el-* �������ǣ������˫������646px�����Ķ���խ���� single-panel �� 322px ������ */
+/* 弹层独立样式：作用于日期范围控件的 popper-class（teleport 到 body，scoped 无法命中），
+   因此使用全局 --el-* 变量覆盖；宽度双保险：646px 视口以下按窄屏 single-panel 的 322px 布局 */
 @media (max-width: 640px) {
-  /* 375/390 �ӿ��� 322px ��������壨theme-chalk .el-date-range-picker.single-panel Ԥ����ȣ�
-     ���ϵ���߾����������λ���ӿ��ڣ�popper �����Ͻ簴�ӿ����� */
+  /* 375/390 视口按 322px 单面板布局（theme-chalk .el-date-range-picker.single-panel 预设宽度），
+     加上内边距后不超过小视口宽度；popper 左上角按视口定位 */
   .jobtrack-date-picker-popper {
     box-sizing: border-box;
     max-width: calc(100vw - 16px);
   }
 
-  /* ����ڲ����� theme-chalk Ԥ�裨min-width 322�����������񲼾֣���Լ������ɹ����ӿ� */
+  /* 面板内部超出 theme-chalk 预设（min-width 322px）时裁剪，避免日历布局撑破小视口 */
   .jobtrack-date-picker-popper .el-picker-panel__body-wrapper {
     overflow-x: hidden;
   }
 
-  /* z-index ���� Element Plus popper �㼶����2000+���������˴�����Ԥ */
+  /* z-index 低于 Element Plus popper 层级（2000+），此处无需干预 */
 }
-/* ---- ������¼���ڡ��������ڡ��ؼ���Element Plus ElDatePicker �����ڣ��ֲ����� ----
-   ѡ�����޶� .job-form����Ӱ��ɸѡ�� daterange �ؼ����乤������ʽ */
+/* ---- 表单日期（新增/编辑记录的日期字段）Element Plus ElDatePicker 覆盖（局部生效） ----
+   选择器限定 .job-form，不影响筛选栏 daterange 控件在工具栏中的样式 */
 .job-form .field .job-form-date {
   width: 100%;
 }
@@ -1966,7 +1966,7 @@ textarea {
   border-color: var(--danger);
 }
 
-/* ����ֲ���ʽ��teleported �� body��scoped ��������������� */
+/* 弹层独立样式（teleport 到 body，scoped 规则无法命中弹层） */
 .jobtrack-form-date-popper {
   box-sizing: border-box;
 }
@@ -1976,9 +1976,9 @@ textarea {
     max-width: calc(100vw - 16px);
   }
 }
-/* ---- UI �Ż���Element Plus ѡ����ͳһ + Σ�ղ�����Ȩ + ��Ƭ�����Ű� ---- */
+/* ---- UI 优化：Element Plus 选中态统一 + 危险操作弱化权重 + 卡片信息排版 ---- */
 
-/* Σ�ղ���������ʽ��ǳ��� / ����� / ǳ��ߣ���������뿨Ƭ�������� */
+/* 危险次级操作采用浅色样式（浅红底 / 深红字 / 浅红边框），视觉权重低于卡片主操作 */
 .btn-danger-ghost {
   background: #fee2e2;
   color: var(--danger-strong);
@@ -1990,14 +1990,14 @@ textarea {
   color: var(--danger-strong);
 }
 
-/* ������ label ���壨span �棬����� .field label ͬ��ʽ�� */
+/* Element Plus 字段的 label 替代（span 版本，样式与 .field label 一致） */
 .field .field-label {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-muted);
 }
 
-/* Element Plus ѡ�������������ǣ�����������������ȫվ --el-* ������ */
+/* Element Plus 选择器撑满字段容器：宽度由外层字段控制，配色统一走全站 --el-* 变量 */
 .toolbar .field .el-select {
   width: 100%;
 }
@@ -2031,7 +2031,7 @@ textarea {
   color: var(--text);
 }
 
-/* ѡ�������㣨teleported �� body�� */
+/* 选中弹层（teleport 到 body） */
 .jobtrack-select-popper {
   box-sizing: border-box;
 }
@@ -2042,7 +2042,7 @@ textarea {
   }
 }
 
-/* ��Ƭ����Ϣ����Ϊ������ڣ��½ṹ card-main�� */
+/* 卡片信息区作为详情入口（新结构 card-main） */
 .job-card .card-main {
   cursor: pointer;
   transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
@@ -2064,7 +2064,7 @@ textarea {
   border-color: var(--border-hover);
 }
 
-/* ��Ƭ��Ϣ�㼶��Label �μ�ɫ / Value ��ɫ������ֵ�ʶȼӴ� */
+/* 卡片信息层级：Label 次级色 / Value 主色，关键字段视觉加重 */
 .job-card .card-meta .card-meta-row dd {
   color: var(--text);
   font-weight: 600;
@@ -2074,7 +2074,7 @@ textarea {
   margin-top: 6px;
 }
 
-/* ��Ƭ���������� �༭ + ɾ�� ��ö��ť */
+/* 卡片底部操作：编辑 + 删除 两个等宽按钮 */
 .card-actions {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

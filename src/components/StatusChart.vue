@@ -34,7 +34,7 @@ let resizeTimer: ReturnType<typeof setTimeout> | undefined
 
 const hasRecords = computed(() => props.total > 0)
 
-/** Text alternative for the canvas, also used by assistive technology. */
+/** 画布的文字替代内容，同时供辅助技术使用。 */
 const summary = computed(() =>
   props.data
     .filter((slice) => slice.count > 0)
@@ -95,7 +95,7 @@ function ensureChart() {
 
 function render() {
   if (!hasRecords.value) {
-    // nothing to plot: tear the instance down so no empty ring is shown
+    // 无数据可绘：销毁实例，避免显示空环形图
     observer?.disconnect()
     observer = null
     chart?.dispose()

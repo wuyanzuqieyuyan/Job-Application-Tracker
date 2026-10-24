@@ -28,19 +28,19 @@ interface BulkItem {
   input: JobInput
 }
 
-/** count 计数器：分配值与推进必须与 INSERT 同事务（设计文档 v2.1 §2.3/§2.4）。 */
+/** 计数器分配：分配值与推进必须与 INSERT 同事务。 */
 const INSERT_SQL = `INSERT INTO jobs (id, company, position, applied_date, status, notes, created_at, updated_at, sort_order)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 /**
- * 删除（设计文档 v2.1 §4.2）：单语句 RETURNING 在同一条 SQL 内完成
+ * 删除：单语句 RETURNING 在同一条 SQL 内完成
  * "删除 + 取得原记录完整快照"，无删除后回查拼装，无竞态窗口。
  */
 const DELETE_RETURNING_SQL = `DELETE FROM jobs WHERE id = ?
        RETURNING id, company, position, applied_date, status, notes, sort_order, created_at, updated_at`
 
 /**
- * 删除并返回完整快照（v2.1 §4.2）：记录不存在 → undefined。
+ * 删除并返回完整快照：记录不存在 → undefined。
  * 不压缩 sort_order、不触碰计数器（下一轮 restore 的原槽位依据持久空洞）。
  */
 function rowToSnapshot(row: Record<string, unknown>): DeletedJobSnapshot {
@@ -69,7 +69,7 @@ export const jobRepository = {
   },
 
   /**
-   * 新建（设计文档 v2.1 §2.3）：单事务内依次执行
+   * 新建：单事务内依次执行
    * 读计数器 → 读 MAX 校验不变量 → INSERT（sort_order = n）→ 推进计数器。
    * 任一步失败整体回滚，不存在只插入记录或只推进计数器的中间态。
    */
@@ -125,7 +125,7 @@ export const jobRepository = {
   },
 
   /**
-   * 批量导入（整批单事务，原子性；v2.1 §2.3 批量导入行）：
+     * 批量导入（整批单事务，原子性）：
    * - 事务开始时读取一次计数器 n0，仅对实际新增按批内顺序连续分配 n0, n0+1, …，
    *   结束时一次性推进为 n0 + 新增行数；幂等命中的行不分配、不消耗计数器；
    * - 同一 id 已存在且内容一致 → 幂等跳过，安全重试不产生重复行、顺序不漂移；
@@ -195,7 +195,7 @@ export const jobRepository = {
   },
 
   /**
-   * 恢复（设计文档 v2.1 §4.3，单事务、行为完全确定）：
+   * 恢复（单事务、行为完全确定）：
    * 1. 目标 id 已存在 → 409 id_conflict（绝不覆盖、绝不部分写入）；
    * 2. 原槽位空闲 → 以快照原 sortOrder 插入 → 'original'，**不触碰计数器**；
    * 3. 原槽位被占（正常流程不可达的防御分支）→ 计数器同事务分配新序号追加 →

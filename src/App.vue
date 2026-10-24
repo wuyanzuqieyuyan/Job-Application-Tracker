@@ -146,7 +146,7 @@ async function confirmDelete() {
   cancelDelete()
   switch (removed.outcome) {
     case 'deleted': {
-      // P2-D2：只有 DELETE 确认成功（拿到服务器原始 9 字段快照）才开始撤销条目与 5 秒窗口
+      // 只有 DELETE 确认成功（拿到服务器原始 9 字段快照）才开始撤销条目与 5 秒窗口
       const entry = undoStack.pushDelete(removed.snapshot, removed.index)
       showToast('deleted', t('toastDeleted', { company: removed.snapshot.company }), '', undefined, entry)
       break
@@ -184,7 +184,7 @@ async function handleUndo() {
   }
 
   if (entry.type === 'delete') {
-    // P2-D2：删除撤销 = POST /restore 提交原始快照（P2-D1 阶段曾为防御空分支）
+    // 删除撤销 = POST /restore 提交原始快照
     if (!entry.snapshot) {
       // 结构性防御：删除条目必须携带快照，不应出现；丢弃并如实报告
       showToast('error', t('toastUndoFailed'), t('toastSaveFailedDesc'))

@@ -21,9 +21,8 @@ export interface JobInput {
 }
 
 /**
- * 服务端删除快照（设计文档 v2.1 §4.2）：DELETE 成功（200）返回的完整记录，
+ * 服务端删除快照（设计文档 §4.2）：DELETE 成功（200）返回的完整记录，
  * 共 9 个字段：id + 五个业务字段 + sortOrder + createdAt + updatedAt。
- * P2-D1 阶段仅随删除响应保留，恢复流程留给 P2-D2 接入。
  */
 export interface DeletedJobSnapshot extends Job {
   sortOrder: number
@@ -31,11 +30,11 @@ export interface DeletedJobSnapshot extends Job {
   updatedAt: string
 }
 
-/** 恢复结果形态（设计文档 v2.1 §4.3）：原槽位恢复或降级追加。 */
+/** 恢复结果形态（设计文档 §4.3）：原槽位恢复或降级追加。 */
 export type RestoredAs = 'original' | 'appended'
 
 /**
- * 恢复成功响应（设计文档 v2.1 §4.3）：恰好 8 个字段
+ * 恢复成功响应（设计文档 §4.3）：恰好 8 个字段
  * （id + 五个业务字段 + sortOrder + restoredAs），**不含** createdAt/updatedAt。
  * 与 DELETE 快照（9 字段、含时间戳）是不同的契约形态，运行时校验各自独立。
  */
@@ -84,7 +83,7 @@ export function statusBadgeStyle(status: JobStatus): StatusBadgeStyle {
   return STATUS_BADGE_STYLES[status]
 }
 
-/** Sort order for the record list, by application date. */
+/** 记录列表的排序方式，按投递日期。 */
 export type SortOrder = 'date-desc' | 'date-asc'
 
 export const SORT_LABELS: Record<SortOrder, string> = {
@@ -92,7 +91,7 @@ export const SORT_LABELS: Record<SortOrder, string> = {
   'date-asc': '投递日期（旧 → 新）',
 }
 
-/** Composable query state. Never written back to storage. */
+/** 组合式查询状态。绝不回写到存储。 */
 export interface JobFilters {
   keyword: string
   status: JobStatus | 'all'

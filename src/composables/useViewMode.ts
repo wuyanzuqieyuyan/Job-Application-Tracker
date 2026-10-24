@@ -58,8 +58,8 @@ export function useViewMode() {
     } else {
       narrow.value = window.innerWidth <= NARROW_MAX_WIDTH
     }
-    // Fallback: re-evaluate on every resize in case the media query change
-    // event is not delivered (some browsers/embeds). rAF-throttled.
+    // 兜底：在每次 resize 时重新求值，以防媒体查询 change 事件未送达
+    // （部分浏览器/内嵌环境）。经 rAF 节流。
     window.addEventListener('resize', handleResize)
   }
 
@@ -90,7 +90,7 @@ export function useViewMode() {
     try {
       localStorage.setItem(STORAGE_KEY, mode)
     } catch {
-      // storage unavailable: keep the in-memory choice for this session
+      // 存储不可用：本次会话内保留内存中的选择
     }
   }
 
@@ -99,7 +99,7 @@ export function useViewMode() {
     try {
       localStorage.removeItem(STORAGE_KEY)
     } catch {
-      // storage unavailable: nothing to clear
+      // 存储不可用：无内容可清除
     }
   }
 

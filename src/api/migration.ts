@@ -2,15 +2,15 @@ import type { Job, JobStatus } from '../types'
 import { importJobs, isValidJobRecord, listJobs, ApiError } from './jobsClient'
 
 /**
- * 历史 localStorage 数据迁移（P2-D1）。
+ * 历史 localStorage 数据迁移。
  *
- * 设计要点（对应任务书五）：
+ * 设计要点：
  * - 迁移判据不是"服务器记录数为零"，而是显式迁移标记 + 旧数据快照内容。
  * - 利用服务端 `POST /api/jobs/import` 的幂等语义（同 id 同内容 → 跳过；同 id 不同内容 → 409 整批回滚）。
  * - 导入成功不能只凭 201 判定：必须在导入后重新拉取列表，逐条核对"每个本地记录断 id
  *   都已按原内容落到服务器"，全部核对通过才写入迁移完成标记。
  * - 任何失败路径都不删除/改写/覆盖旧 localStorage 数据（旧键一经写入此后完全不再改动，
- *   成为冻结备份，恢复保障见交付报告）。
+ *   成为冻结备份）。
  * - 服务端不可达、校验失败、结果不确定 → 不写完成标记；下次启动再次尝试（幂等安全）。
  * - 服务端不可达时绝不回退到本地数据源。
  */
@@ -205,7 +205,7 @@ export async function migrateLegacyIfNeeded(serverJobs: Job[]): Promise<Migratio
     return noticeAndKeep(serverJobs, { kind: 'conflict', count: internalConflictIds.size, ids: [...internalConflictIds] })
   }
 
-  // 预检二：候选与服务端现有同 id 记录内容不同 → 服务端 409 整批回滚（v2.1 §2.3）
+  // 预检二：候选与服务端现有同 id 记录内容不同 → 服务端 409 整批回滚（设计文档 §2.3）
   const serverById = new Map(serverJobs.map(job => [job.id, job]))
   const conflicts: string[] = []
   for (const record of candidates) {

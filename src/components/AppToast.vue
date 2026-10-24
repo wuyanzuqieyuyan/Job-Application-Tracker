@@ -10,7 +10,7 @@ const props = defineProps<{
   description?: string
   undoEntry: UndoEntry | null
   remainingMs: number
-  /** 0..1 remaining share of the undo window, derived from the undo stack. */
+  /** 撤销窗口剩余比例（0..1），由撤销栈推导。 */
   progress: number
   leaving?: boolean
 }>()

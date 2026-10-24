@@ -27,7 +27,7 @@ export interface ExportLabels {
   statusLabel: (status: JobStatus) => string
 }
 
-/** Local date, e.g. jobtrack-export-2026-10-21.xlsx */
+/** 本地日期，例如 jobtrack-export-2026-10-21.xlsx */
 export function buildExportFileName(date: Date = new Date()): string {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -47,8 +47,8 @@ function triggerDownload(data: ArrayBuffer, fileName: string) {
   link.style.display = 'none'
   document.body.appendChild(link)
   link.click()
-  // the blob url has to stay alive until the browser has read the file,
-  // otherwise the transfer is aborted right after it started
+  // blob URL 必须保持存活，直到浏览器读取完文件，
+  // 否则下载会在刚开始时就被中止
   window.setTimeout(() => {
     link.remove()
     URL.revokeObjectURL(url)
@@ -56,11 +56,10 @@ function triggerDownload(data: ArrayBuffer, fileName: string) {
 }
 
 /**
- * Builds the .xlsx workbook bytes for the given records.
+ * 根据给定记录构建 .xlsx 工作簿字节。
  *
- * Every user supplied value is written as a plain text cell, so notes that
- * start with "=" are never treated as a formula. Nothing is sent anywhere:
- * the workbook is produced entirely in the browser.
+ * 所有用户提供的值都写成纯文本单元格，因此以 "=" 开头的备注不会被当作公式。
+ * 数据不会发送到任何地方：工作簿完全在浏览器本地生成。
  */
 export async function buildWorkbookBuffer(jobs: Job[], labels: ExportLabels): Promise<ArrayBuffer> {
   const workbook = new ExcelJS.Workbook()
@@ -93,8 +92,8 @@ export async function buildWorkbookBuffer(jobs: Job[], labels: ExportLabels): Pr
 }
 
 /**
- * Serialises the given records into an .xlsx workbook and downloads it.
- * The export never modifies business data.
+ * 将给定记录序列化为 .xlsx 工作簿并触发下载。
+ * 导出绝不修改业务数据。
  */
 export async function exportJobsToXlsx(jobs: Job[], labels: ExportLabels): Promise<ExportResult> {
   if (jobs.length === 0) {

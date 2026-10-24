@@ -6,12 +6,10 @@ Node.js + Express 5 + TypeScript + better-sqlite3 的后端。数据库文件位
 
 - **推荐：Node.js 24 LTS**（维护期至 2028 年，原生模块 prebuilt 覆盖最稳）。
 - `package.json` 的 `engines.node` 为 `>=22.5.0`：better-sqlite3 13.x 的最低要求是 `>=22`，
-  22.5 起提供的 Node 内置打包 N-API 一致性更好；当前开发机为 Node 26.12.0，已在本机验证通过。
+  22.5 起提供的 Node 内置打包 N-API 一致性更好。
 - 未强制 engine-strict：26.x（Current→LTS）同样可运行，避免多机器差异直接阻塞。
-- **验证范围声明**：上述安装验证仅在**本机**（Windows 11，Node.js 26.12.0，
-  npm 11.20.0，better-sqlite3 13.0.3 的 win32-x64 prebuild）完成，
-  `npm ci` → 构建幂等 → 全量测试 → smoke → dist 启动逐项通过；
-  **该结果不证明** macOS、Linux 或任何其他 Node.js 版本也安装/运行正常，使用前需另行验证。
+- 以上版本组合仅在本机（Windows 11，Node.js 26）验证过；macOS、Linux 或其他 Node
+  版本使用前需自行验证。
 - 仓库提供 `.nvmrc`（内容 `24`），供使用 nvm 的环境一键切换到推荐版本。
 
 ## better-sqlite3 安装要点（为何需要 .npmrc 里的 ignore-scripts）
@@ -46,7 +44,7 @@ npm run server:build    # tsc -> dist（ESM/NodeNext）
 npm run server:start    # node dist/server.js（PORT/HOST 可用环境变量覆盖）
 
 # 测试
-npm run server:test     # vitest run（全量用例，当前 30 个；以实际输出为准）
+npm run server:test     # vitest run（全量用例）
 npx tsx tests/smoke.ts  # 手动冒烟（使用临时库，不影响真实数据）
 ```
 
@@ -55,7 +53,7 @@ npx tsx tests/smoke.ts  # 手动冒烟（使用临时库，不影响真实数据
 - 数据目录：环境变量 `JOBTRACK_DATA_DIR`，缺省为 `server/data`（自动创建）。
 - `journal_mode = WAL`；schema 初始化见 `src/db.ts`（jobs 表 + 2 个索引）。
 
-## 错误响应语义（本次复审后定稿）
+## 错误响应语义
 
 统一为 `{ error: { code, message } }`，成功为 `{ data: ... }`：
 
@@ -77,8 +75,7 @@ npx tsx tests/smoke.ts  # 手动冒烟（使用临时库，不影响真实数据
 
 ## 删除接口（`DELETE /api/jobs/:id`）
 
-已实施（P2-B，与设计文档 v2.1 §4.2 一致）：删除成功返回 `200 OK` 与完整删除快照，
-不再是 `204 No Content` 无响应体。
+删除成功返回 `200 OK` 与完整删除快照，不再是 `204 No Content` 无响应体。
 
 - 快照字段（共 9 个：id、五个业务字段、sortOrder、createdAt、updatedAt，命名与既有 API 一致）：
   `id`、`company`、`position`、`appliedDate`、`status`、`notes`、
@@ -110,7 +107,7 @@ DELETE /api/jobs/cdb94cab-41bf-4c0a-babe-adadfa2da456
 { "error": { "code": "job_not_found", "message": "记录不存在" } }
 ```
 
-实现要点（与 P2-B 验收一致）：
+实现要点：
 
 - 单语句 `DELETE FROM jobs WHERE id = ? RETURNING …` 原子完成"删除 + 取得原记录快照"，
   不在删除后回查拼装，无竞态窗口；数据库层失败（如注入异常）→ 整语句回滚，无部分删除。
@@ -119,7 +116,7 @@ DELETE /api/jobs/cdb94cab-41bf-4c0a-babe-adadfa2da456
 
 ## 恢复接口（`POST /api/jobs/restore`）
 
-已实施（P2-C，与设计文档 v2.1 §4.3 一致）。与删除接口的 200 快照配套使用：把删除时拿到的
+与删除接口的 200 快照配套使用：把删除时拿到的
 9 字段快照作为请求体回传，即可按原 id 恢复该记录。
 
 ### 请求格式
@@ -218,13 +215,9 @@ POST /api/jobs/restore
 - **冲突回滚**：id 已存在（或同批出现两次）但内容不同 → 409 `id_conflict`，整批事务回滚，
   绝不部分写入。迁移失败重试不会清空或覆盖任何现有用户数据。
 
-## 记录顺序契约（**已部分实施，历史方案保留**）
+## 记录顺序契约
 
-> 状态勘误（P2-C-DOC）：本节最初为方案记录，其中 Schema/`sort_order` 迁移与稳定排序
-> （P1）、创建/导入计数器分配（P2-A）、删除 200 快照（P2-B）现**均已实施**，
-> 恢复接口已按设计文档 v2.1 §4.3 定稿实现（见上方"恢复接口"一节）。
-> 本节余下内容仅作当时讨论与未决事项的存档保留，"尚未实施"的旧表述不再成立。
-> 方案同时区分三个概念，避免相互覆盖：
+本节区分三个概念，避免相互覆盖：
 
 **三个概念（互不覆盖）**
 
@@ -232,7 +225,7 @@ POST /api/jobs/restore
 |---|---|---|
 | 数据库默认持久化顺序 | 后端 `GET /api/jobs` 默认返回序 | 稳定、确定性，反映"记录加入的先后" |
 | 前端显式排序 | `SearchFilter`（搜索/筛选/日期排序） | 用户主动选择，永远优先于默认序 |
-| 撤销恢复位置语义 | `useJobs` 的 `RemovedJob`/`restoreJob` | 依赖删除时刻的数组索引还原原位（LIFO、5 秒窗口） |
+| 撤销恢复位置语义 | `useJobs` 的删除快照与 `restoreDeleted` | 优先按删除快照的 `sortOrder` 由服务端还原原槽位（LIFO、5 秒窗口）；仅当恢复后重新拉取列表失败时，才按删除前数组索引做本地近似插入 |
 
 **1. 数据库迁移（启动时自动，幂等）**
 
@@ -244,7 +237,7 @@ POST /api/jobs/restore
   迁移中途任意失败（磁盘满、回填异常等）会整体回滚，数据库保持迁移前的原始状态，之后可安全重试；
   失败路径不需要人为清理。**不删除旧库、不清空任何记录。**
 - 迁移在服务器开始接受请求**之前**执行（启动序列钩子），避免与后续请求并发写。
-- 迁移结果需要写入测试用例（迁移前后行数与内容一致、回填后顺序与 rowid 顺序一致）。
+- 迁移行为由测试覆盖（迁移前后行数与内容一致、回填后顺序与 rowid 顺序一致）。
 
 **2. 创建与导入**
 
@@ -259,49 +252,14 @@ POST /api/jobs/restore
 
 **3. 删除与撤销恢复（原位还原）**
 
-现状依据（前端 `useJobs.ts`）：撤销持有 `{ job: 完整快照, index: 删除前数组索引 }`，
-LIFO、5 秒有效期；`restoreJob` 恢复时同 id 已存在直接失败，索引钳位到合法区间后 splice 还原；
-`removeJobById` 带 `expected` 快照校验，避免撤销丢弃后续编辑。
-
-**必须明确：单纯复用 `POST /api/jobs/import`（保留历史 id、幂等）只能把记录追加到末尾，
-不满足原位恢复要求**，仅能作为"撤销窗口已关闭后的降级兜底"。
-
-推荐设计：专用恢复接口 `POST /api/jobs/restore`（待批准后定义）：
-
-- 请求体：`{ record: <五字段完整快照>, anchor: { afterId?: string, beforeId?: string } }`。
-  `anchor` 建议由**后端在下一次删除时的响应或前端删除时刻的快照**提供删除位置的相邻记录 id
-  （方案要点见"待架构决定"清单）。
-- 恢复流程（单事务，原子）：
-  1. 校验 `record` 五字段（与创建相同的 `validateJobInput`）；
-  2. 若目标 id 已存在 → 409 `id_conflict`，撤销 UI 应立即关闭（重复提交第二次同样命中该分支）；
-  3. 按 `afterId`/`beforeId` 计算目标 sort_order 区间，对 `sort_order > 目标区起点` 的行统一 +1 平移，
-     然后以**原 id**插入并赋给原 sort_order 值（或落在两邻之间）；
-     记录量级小（个人求职记录，数百条以内），平移 `UPDATE` 成本可忽略；
-  4. `afterId`/`beforeId` 无法匹配（相邻记录也已被删除或越界）：钳位到当前列表末尾追加——
-     与现有前端 `restoreJob` 的 `Math.min/Math.max` 钳位语义对应，响应中返回最终位置。
-- 本次删除的记录数据不需要后端"保存"：快照已在前端撤销消息中，
-  服务端只需保证"窗口内删除→恢复"期间不留痕（硬删除不变）。
-- LIFO/5 秒窗口仍由前端控制（与现有 localStorage 行为一致），后端无需定时清理。
-
-**该方案仍待架构决定的事项**
-
-1. `anchor` 的获取方式（v1 时为未决事项）：**已定**——P2-B 实施后 DELETE 响应为
-   200 `{ data: snapshot }`，`snapshot` 已含 `sortOrder` 与完整 9 字段（"直接下发精确位置"分支落地），
-   该讨论分支中的"从 204 改为 200"旧描述不再适用；如未来恢复 API 仍需相邻 id，可由快照现有字段推导。
-2. 撤销窗口关闭后的兜底语义：静默改为末尾追加（导入 API），还是拒绝并提示。
-3. 首次迁移的历史记录：是否需要按 `appliedDate` 等字段做一次性排序回填
-   （当前方案为纯追加，不假设历史位置）。
-4. `sort_order` 是否加唯一索引（方案建议加，防止平移异常时出现重复序号掩盖错误）。
-
-**迁移前待确认事项（本机实测前置）**
-
-- 历史 id 只通过代码路径分析确认了三种来源：`sample-1..4` 种子、`crypto.randomUUID()`、
-  回退格式 `job-<timestamp>-<6位base36>`。**没有对真实用户 localStorage 数据做过盘点**，
-  不能声称当前正则兼容所有历史数据；迁移前应在客户端做一次预检扫描，
-  把不满足 `CLIENT_ID_PATTERN` 的记录**原样保留并在 UI 报告**（不自动丢弃、不静默改写）。
-- 存储校验要求 `notes` 为 string；但无法排除存在缺 `notes` 的历史记录——
-  后端契约（当前及本方案）对 create/import 一致要求五字段齐全，缺 `notes` 会得到 400 `invalid_notes`。
-  迁移前应在客户端预检并把缺失的 `notes` 显式补为 `''`，不做后端静默默认。
+- 前端 `useJobs.ts`：删除撤销条目携带服务器返回的完整 9 字段快照，LIFO、5 秒有效期；
+  `restoreDeleted` 把快照提交到 `POST /api/jobs/restore`，成功后以重新拉取的服务器列表为准；
+  撤销"新增"（`removeJobById`）带 `expected` 快照校验，避免撤销丢弃后续编辑。
+- 单纯复用 `POST /api/jobs/import`（保留历史 id、幂等）只能把记录追加到末尾，
+  不满足原位恢复要求——因此提供专用恢复接口（契约见上方"恢复接口"一节）：
+  删除快照自带 `sortOrder`，原槽位空闲则按原槽位还原（`restoredAs: 'original'`），
+  槽位被占（外部修改等防御分支）降级为计数器分配追加（`restoredAs: 'appended'`）。
+- LIFO/5 秒窗口由前端控制，后端不做定时清理、不做软删除。
 
 ## 数据目录/可靠性附注
 

@@ -110,7 +110,7 @@ function buildLegacyDb(name: string, rowCount: number): Dialect {
   return d
 }
 
-describe('P1：Schema 迁移与持久化顺序计数器（设计文档 v2.1）', () => {
+describe('Schema 迁移与持久化顺序计数器', () => {
   it('#1 新数据库：完整 Schema（含 sort_order 与 CHECK）、三个非唯一索引、meta 表、计数器初始 1', () => {
     const d = newTmpFileDb('fresh')
     const logs: string[] = []

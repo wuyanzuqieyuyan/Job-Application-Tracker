@@ -3,7 +3,7 @@ import type { JobFilters } from '../types'
 /**
  * 日期范围控件（Element Plus daterange）与筛选状态之间的纯映射。
  *
- * 契约（P2-D3 前接单：投递日期范围控件统一化）：
+ * 契约（投递日期范围控件与筛选状态的统一映射）：
  * - 筛选状态的格式永不改变：`dateFrom`/`dateTo` 为 `YYYY-MM-DD` 字符串，未选时为 `''`
  *   （useJobs.dateRangeInvalid 与 filteredJobs 的 Date.parse 边界逻辑依赖此格式）。
  * - `value-format="YYYY-MM-DD"` 使 Element Plus 直接产出/消费字符串，

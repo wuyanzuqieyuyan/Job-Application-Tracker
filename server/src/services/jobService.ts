@@ -32,7 +32,7 @@ function isFutureDate(dateStr: string): boolean {
 
 /**
  * 快照时间戳格式：与 `new Date().toISOString()` 一致（毫秒精度 + 'Z'），
- * 约定来源为服务端写库时刻（设计文档 v2.1 §4.3：时间戳格式非法 → 400 invalid_request）。
+ * 约定来源为服务端写库时刻；恢复请求中的时间戳格式非法 → 400 invalid_request。
  */
 const TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
 
@@ -119,7 +119,7 @@ export const jobService = {
   },
 
   /**
-   * 删除并返回完整快照（v2.1 §4.2）：成功 200 { data: snapshot }；
+     * 删除并返回完整快照：成功 200 { data: snapshot }；
    * 记录不存在 → 404（非幂等：重复删除第二次即 404）。
    */
   deleteJob(id: string): DeletedJobSnapshot {
@@ -140,7 +140,7 @@ export const jobService = {
   },
 
   /**
-   * 撤销恢复（设计文档 v2.1 §4.3）：按 DELETE 200 返回的 9 字段快照恢复记录。
+   * 撤销恢复：按 DELETE 200 返回的 9 字段快照恢复记录。
    * 客户端提交的 record 一律经校验归一后才写库：
    * - record 必须是对象，id 必填且满足 CLIENT_ID_PATTERN；
    * - 五业务字段走与创建同一套 validateJobInput（额外未知字段与既有一致地被忽略）；

@@ -54,7 +54,7 @@ async function choose(scope: ExportScope) {
   }
   busy.value = true
   try {
-    // the Excel writer is only loaded when an export is actually requested
+    // Excel 写入库仅在真正发起导出时才动态加载
     const { exportJobsToXlsx } = await import('../utils/exportJobs')
     emit('result', await exportJobsToXlsx(jobs, exportLabels.value))
   } catch {

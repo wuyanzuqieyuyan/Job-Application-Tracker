@@ -23,7 +23,7 @@ export interface JobInput {
 }
 
 /**
- * 删除快照（设计文档 v2.1 §4.2）：DELETE 成功（200）返回的完整记录，
+ * 删除快照：DELETE 成功（200）返回的完整记录，
  * 共 9 个字段（id + 五业务字段 + sortOrder + createdAt + updatedAt），
  * 作为未来撤销恢复 API 的数据基础。时间戳为删除时刻的原始值，恢复时原样保留。
  */
@@ -33,7 +33,7 @@ export interface DeletedJobSnapshot extends Job {
   updatedAt: string
 }
 
-/** 恢复结果形态（设计文档 v2.1 §4.3）：原槽位恢复或降级追加。 */
+/** 恢复结果形态：原槽位恢复或降级追加。 */
 export type RestoredAs = 'original' | 'appended'
 
 export interface RestoredJobData extends Job {

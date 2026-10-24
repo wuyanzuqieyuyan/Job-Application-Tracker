@@ -1,5 +1,5 @@
 ﻿/**
- * P2-D1 前端接入集成测试（不使用浏览器，纯 Node 环境，经 tsx 运行）。
+ * 前端接入集成测试（不使用浏览器，纯 Node 环境，经 tsx 运行）。
  *
  * 覆盖：API 客户端状态码/错误解析/响应校验、迁移判据与幂等、冲突防护、
  * useJobs 初始化状态机（含后端不可达不回退 localStorage）、CRUD 数据流。
@@ -64,7 +64,7 @@ async function startServer() {
     try {
       const res = await realFetch(`http://127.0.0.1:${serverPort}/api/health`)
       if (res.ok) return
-    } catch { /* not ready yet */ }
+    } catch { /* 尚未就绪 */ }
     await wait(100)
   }
   throw new Error('测试后端未能启动')
@@ -320,7 +320,7 @@ async function scenarioOps() {
 }
 
 /**
- * 场景五：删除撤销接入后端（P2-D2）。
+ * 场景五：删除撤销接入后端。
  * 覆盖：restore 请求体必须与服务器给的原始快照逐键一致（捕获 fetch body）、
  * original 恢复 + 服务器序同步、同 id 不同内容 → 409 冲突（绝不覆盖）、
  * 恢复/删除的"不确定"分支（不宣称成功/失败、不额外重复尝试、列表不动）、
@@ -437,7 +437,7 @@ async function scenarioRestore() {
 }
 
 /**
- * 场景六：撤销栈契约（P2-D2 结构扩展）。
+ * 场景六：撤销栈契约。
  * 覆盖：pushDelete 携带快照、LIFO、reinsert 保持原 expiresAt（不续命）、
  * 过期 + in-flight 竞态（剪枝放行 → 释放后按原时间剪掉，不复活）。
  */
@@ -517,13 +517,13 @@ async function scenarioI18nBanner() {
 }
 
 /**
- * 场景八：P2-D3 验收新增（阶段 A2 / B3.2 / B4）。
- * A2：独立临时数据库下，新增 → 停止后端 → 用同一数据库重启后端 → 重新拉取，
- *     记录与业务字段完全一致（服务器持久化，不依赖前端会话）。
- * B3.2：删除回退窗口内原排序槽位被占（直接写临时 sqlite 模拟"外部修改"），
- *       restore 端到端返回 restoredAs='appended'，前端接受服务器降级结果，
- *       最终顺序以重新拉取的服务器列表为准（restoredAs 不决定前端排序）。
- * B4：撤销新增的服务端删除路径带编辑保护 —— 记录被编辑后拒绝按原快照撤销。
+ * 场景八：服务器持久化与降级恢复的补充覆盖。
+ * - 持久化：独立临时数据库下，新增 → 停止后端 → 用同一数据库重启后端 → 重新拉取，
+ *   记录与业务字段完全一致（不依赖前端会话）。
+ * - 删除回退窗口内原排序槽位被占（直接写临时 sqlite 模拟"外部修改"），
+ *   restore 端到端返回 restoredAs='appended'，前端接受服务器降级结果，
+ *   最终顺序以重新拉取的服务器列表为准（restoredAs 不决定前端排序）。
+ * - 撤销新增的服务端删除路径带编辑保护 —— 记录被编辑后拒绝按原快照撤销。
  */
 async function scenarioPersistentAppend() {
   console.log('# 场景八：重启持久化 + appended 端到端 + 编辑保护')
@@ -542,7 +542,7 @@ async function scenarioPersistentAppend() {
       try {
         const res = await realFetch(`http://127.0.0.1:${port}/api/health`)
         if (res.ok) return
-      } catch { /* not ready */ }
+      } catch { /* 尚未就绪 */ }
       await wait(100)
     }
     throw new Error('场景八后端未能启动')
